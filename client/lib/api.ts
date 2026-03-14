@@ -254,12 +254,6 @@ export const driverApi = {
       token,
     }),
 
-    getDrivers: (token?: string | null) =>
-  apiRequest("/api/admin/drivers", {
-    method: "GET",
-    token,
-  }),
-
   getNotifications: (token?: string | null) =>
     apiRequest("/api/driver/notifications", {
       method: "GET",
@@ -311,10 +305,10 @@ export const adminApi = {
     }),
 
   getDrivers: (token?: string | null) =>
-    apiRequest("/api/admin/drivers", {
-      method: "GET",
-      token,
-    }),
+  apiRequest("/api/admin/drivers", {
+    method: "GET",
+    token,
+  }),
 
   getRides: (token?: string | null) =>
     apiRequest("/api/admin/rides", {
