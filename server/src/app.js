@@ -5,7 +5,7 @@ const rideRoutes = require("./routes/ride.routes");
 const passengerRoutes = require("./routes/passenger.routes");
 const driverRoutes = require("./routes/driver.routes");
 const paymentRoutes = require("./routes/payment.routes");
-
+const adminRoutes = require("./routes/admin.routes");
 
 
 const app = express();
@@ -32,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rides", rideRoutes);
 app.use("/api/passenger", passengerRoutes);
 app.use("/api/driver", driverRoutes);
-app.use("/api/payments", paymentRoutes)
-
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes)
 
 module.exports = app;

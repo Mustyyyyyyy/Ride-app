@@ -1,21 +1,50 @@
-const router = require("express").Router();
-const auth = require("../middleware/auth.middleware");
-const role = require("../middleware/role.middleware");
-const ctrl = require("../controllers/admin.controller");
+const express = require("express");
+const router = express.Router();
 
-router.use(auth, role("admin"));
+const authMiddleware = require("../middleware/auth.middleware");
+const roleMiddleware = require("../middleware/role.middleware");
+const adminController = require("../controllers/admin.controller");
 
-router.get("/dashboard", ctrl.getAdminDashboard);
-router.get("/passengers", ctrl.getPassengers);
-router.get("/drivers", ctrl.getDrivers);
-router.get("/drivers/:id", ctrl.getDriverById);
-router.patch("/drivers/:id/approve", ctrl.approveDriver);
-router.patch("/drivers/:id/reject", ctrl.rejectDriver);
-router.get("/rides", ctrl.getAllRides);
-router.get("/rides/:id", ctrl.getRideById);
-router.get("/safety-reports", ctrl.getSafetyReports);
-router.patch("/safety-reports/:id", ctrl.updateSafetyReport);
-router.get("/support-tickets", ctrl.getSupportTickets);
-router.patch("/support-tickets/:id", ctrl.updateSupportTicket);
+router.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.getDashboard
+);
+
+router.get(
+  "/users",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.getUsers
+);
+
+router.get(
+  "/drivers",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.getDrivers
+);
+
+router.get(
+  "/rides",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.getRides
+);
+
+router.get(
+  "/support",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.getSupportTickets
+);
+
+router.patch(
+  "/support/:id",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.updateSupportTicketStatus
+);
 
 module.exports = router;

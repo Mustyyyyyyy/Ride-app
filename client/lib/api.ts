@@ -287,3 +287,46 @@ export const paymentApi = {
       token,
     }),
 };
+
+export const adminApi = {
+  getDashboard: (token?: string | null) =>
+    apiRequest("/api/admin/dashboard", {
+      method: "GET",
+      token,
+    }),
+
+  getUsers: (token?: string | null) =>
+    apiRequest("/api/admin/users", {
+      method: "GET",
+      token,
+    }),
+
+  getDrivers: (token?: string | null) =>
+    apiRequest("/api/admin/drivers", {
+      method: "GET",
+      token,
+    }),
+
+  getRides: (token?: string | null) =>
+    apiRequest("/api/admin/rides", {
+      method: "GET",
+      token,
+    }),
+
+  getSupportTickets: (token?: string | null) =>
+    apiRequest("/api/admin/support", {
+      method: "GET",
+      token,
+    }),
+
+  updateSupportStatus: (
+    ticketId: number | string,
+    payload: { status: string },
+    token?: string | null
+  ) =>
+    apiRequest(`/api/admin/support/${ticketId}`, {
+      method: "PATCH",
+      body: payload,
+      token,
+    }),
+};
