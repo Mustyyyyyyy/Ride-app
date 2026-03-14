@@ -36,7 +36,7 @@ exports.register = async (req, res) => {
       [
         name.trim(),
         normalizedEmail,
-        phone || null,
+        phone ? phone.trim() : null,
         hashedPassword,
         role || "passenger",
         true,
@@ -64,6 +64,7 @@ exports.register = async (req, res) => {
     console.error("REGISTER ERROR:", error);
     return res.status(500).json({
       message: "Server error during registration",
+      error: error.message,
     });
   }
 };
@@ -81,7 +82,12 @@ exports.login = async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
+      `
+      SELECT id, name, email, phone, password, role, is_verified
+      FROM users
+      WHERE email = $1
+      LIMIT 1
+      `,
       [normalizedEmail]
     );
 
@@ -92,6 +98,12 @@ exports.login = async (req, res) => {
     }
 
     const userFromDb = result.rows[0];
+
+    if (!userFromDb.password) {
+      return res.status(500).json({
+        message: "User password is missing in database",
+      });
+    }
 
     const passwordMatch = await bcrypt.compare(password, userFromDb.password);
 
@@ -129,6 +141,7 @@ exports.login = async (req, res) => {
     console.error("LOGIN ERROR:", error);
     return res.status(500).json({
       message: "Server error during login",
+      error: error.message,
     });
   }
 };
@@ -140,8 +153,9 @@ exports.getMe = async (req, res) => {
       SELECT id, name, email, phone, role, is_verified
       FROM users
       WHERE id = $1
+      LIMIT 1
       `,
-      [req.user.id]
+      [Number(req.user.id)]
     );
 
     if (result.rows.length === 0) {
@@ -157,6 +171,7 @@ exports.getMe = async (req, res) => {
     console.error("GET ME ERROR:", error);
     return res.status(500).json({
       message: "Server error fetching profile",
+      error: error.message,
     });
   }
 };
