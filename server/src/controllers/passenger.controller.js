@@ -2,80 +2,87 @@ const pool = require("../config/db");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
-    const [ridesResult, walletResult, notificationsResult, ticketsResult] =
-      await Promise.all([
-        pool.query(
-          `
-          SELECT r.*, u.name AS driver_name
-          FROM rides r
-          LEFT JOIN users u ON r.driver_id = u.id
-          WHERE r.passenger_id = $1
-          ORDER BY r.created_at DESC
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT balance
-          FROM wallets
-          WHERE user_id = $1
-          LIMIT 1
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT id, title, message, type, is_read, created_at
-          FROM notifications
-          WHERE user_id = $1
-          ORDER BY created_at DESC
-          LIMIT 5
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT id, subject, category, status, created_at
-          FROM support_tickets
-          WHERE user_id = $1
-          ORDER BY created_at DESC
-          LIMIT 5
-          `,
-          [userId]
-        ),
-      ]);
+    const statsResult = await pool.query(
+      `
+      SELECT
+        COUNT(*)::int AS total_rides,
+        COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_rides,
+        COUNT(*) FILTER (WHERE status IN ('pending', 'accepted', 'ongoing'))::int AS pending_rides,
+        COALESCE(SUM(price), 0)::numeric AS total_spent
+      FROM rides
+      WHERE passenger_id = $1
+      `,
+      [userId]
+    );
 
-    const rides = ridesResult.rows;
-    const completedRides = rides.filter((r) => r.status === "completed").length;
-    const pendingRides = rides.filter((r) =>
-      ["pending", "accepted", "ongoing"].includes(r.status)
-    ).length;
+    const walletResult = await pool.query(
+      `
+      SELECT balance
+      FROM wallets
+      WHERE user_id = $1
+      LIMIT 1
+      `,
+      [userId]
+    );
 
-    const totalSpent = rides
-      .filter((r) => r.status === "completed")
-      .reduce((sum, ride) => sum + Number(ride.price || 0), 0);
+    const recentRidesResult = await pool.query(
+      `
+      SELECT id, pickup, dropoff, status, price, created_at
+      FROM rides
+      WHERE passenger_id = $1
+      ORDER BY created_at DESC
+      LIMIT 5
+      `,
+      [userId]
+    );
+
+    const notificationsResult = await pool.query(
+      `
+      SELECT id, title, message, type, is_read, created_at
+      FROM notifications
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 5
+      `,
+      [userId]
+    );
+
+    const ticketsResult = await pool.query(
+      `
+      SELECT id, subject, category, status, created_at
+      FROM support_tickets
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 5
+      `,
+      [userId]
+    );
 
     return res.status(200).json({
-      stats: {
-        total_rides: rides.length,
-        completed_rides: completedRides,
-        pending_rides: pendingRides,
-        total_spent: totalSpent,
+      stats: statsResult.rows[0] || {
+        total_rides: 0,
+        completed_rides: 0,
+        pending_rides: 0,
+        total_spent: 0,
       },
-      wallet: walletResult.rows[0] || { balance: 0 },
-      recentRides: rides.slice(0, 5),
-      notifications: notificationsResult.rows,
-      tickets: ticketsResult.rows,
+      wallet: {
+        balance: Number(walletResult.rows[0]?.balance || 0),
+      },
+      recentRides: recentRidesResult.rows || [],
+      notifications: notificationsResult.rows || [],
+      tickets: ticketsResult.rows || [],
     });
   } catch (error) {
     console.error("PASSENGER DASHBOARD ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching passenger dashboard",
+      error: error.message,
     });
   }
 };
+
 
 exports.getWallet = async (req, res) => {
   try {

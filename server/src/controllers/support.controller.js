@@ -146,3 +146,68 @@ exports.sendSOS = async (req, res) => {
     res.status(500).json({ message: "Server error sending SOS" });
   }
 };
+
+exports.getSupportTickets = async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+
+    const result = await pool.query(
+      `
+      SELECT id, subject, category, message, status, created_at
+      FROM support_tickets
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    return res.status(200).json({
+      tickets: result.rows,
+    });
+  } catch (error) {
+    console.error("GET SUPPORT TICKETS ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while fetching support tickets",
+      error: error.message,
+    });
+  }
+};
+
+exports.createSupportTicket = async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+    const { subject, category, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({
+        message: "Subject and message are required",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      INSERT INTO support_tickets (user_id, subject, category, message, status)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+      `,
+      [
+        userId,
+        subject.trim(),
+        category || "general",
+        message.trim(),
+        "open",
+      ]
+    );
+
+    return res.status(201).json({
+      message: "Support ticket created successfully",
+      ticket: result.rows[0],
+    });
+  } catch (error) {
+    console.error("CREATE SUPPORT TICKET ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while creating support ticket",
+      error: error.message,
+    });
+  }
+};
