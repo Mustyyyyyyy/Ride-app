@@ -4,25 +4,27 @@ exports.getDashboard = async (req, res) => {
   try {
     const userId = Number(req.user.id);
 
-    const statsResult = await pool.query(
-      `
-      SELECT
-        COUNT(*)::int AS total_rides,
-        COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_rides,
-        COUNT(*) FILTER (WHERE status IN ('pending', 'accepted', 'ongoing'))::int AS pending_rides,
-        COALESCE(SUM(price), 0)::numeric AS total_spent
-      FROM rides
-      WHERE passenger_id = $1
-      `,
-      [userId]
-    );
-
     const walletResult = await pool.query(
       `
       SELECT balance
       FROM wallets
       WHERE user_id = $1
       LIMIT 1
+      `,
+      [userId]
+    );
+
+    const statsResult = await pool.query(
+      `
+      SELECT
+        COUNT(*)::int AS total_rides,
+        COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_rides,
+        COUNT(*) FILTER (
+          WHERE status IN ('pending', 'accepted', 'ongoing')
+        )::int AS pending_rides,
+        COALESCE(SUM(price), 0)::numeric AS total_spent
+      FROM rides
+      WHERE passenger_id = $1
       `,
       [userId]
     );
@@ -51,7 +53,7 @@ exports.getDashboard = async (req, res) => {
 
     const ticketsResult = await pool.query(
       `
-      SELECT id, subject, category, status, created_at
+      SELECT id, subject, category, message, status, created_at
       FROM support_tickets
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -61,11 +63,11 @@ exports.getDashboard = async (req, res) => {
     );
 
     return res.status(200).json({
-      stats: statsResult.rows[0] || {
-        total_rides: 0,
-        completed_rides: 0,
-        pending_rides: 0,
-        total_spent: 0,
+      stats: {
+        total_rides: Number(statsResult.rows[0]?.total_rides || 0),
+        completed_rides: Number(statsResult.rows[0]?.completed_rides || 0),
+        pending_rides: Number(statsResult.rows[0]?.pending_rides || 0),
+        total_spent: Number(statsResult.rows[0]?.total_spent || 0),
       },
       wallet: {
         balance: Number(walletResult.rows[0]?.balance || 0),
@@ -83,9 +85,10 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
-
 exports.getWallet = async (req, res) => {
   try {
+    const userId = Number(req.user.id);
+
     const result = await pool.query(
       `
       SELECT balance
@@ -93,22 +96,27 @@ exports.getWallet = async (req, res) => {
       WHERE user_id = $1
       LIMIT 1
       `,
-      [req.user.id]
+      [userId]
     );
 
     return res.status(200).json({
-      wallet: result.rows[0] || { balance: 0 },
+      wallet: {
+        balance: Number(result.rows[0]?.balance || 0),
+      },
     });
   } catch (error) {
     console.error("GET WALLET ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching wallet",
+      error: error.message,
     });
   }
 };
 
 exports.getTransactions = async (req, res) => {
   try {
+    const userId = Number(req.user.id);
+
     const result = await pool.query(
       `
       SELECT id, amount, type, status, reference, created_at
@@ -116,7 +124,7 @@ exports.getTransactions = async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [req.user.id]
+      [userId]
     );
 
     return res.status(200).json({
@@ -126,93 +134,6 @@ exports.getTransactions = async (req, res) => {
     console.error("GET TRANSACTIONS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching transactions",
-    });
-  }
-};
-
-exports.fundWallet = async (req, res) => {
-  try {
-    const userId = Number(req.user.id);
-    const amount = Number(req.body.amount);
-
-    if (!amount || amount <= 0) {
-      return res.status(400).json({
-        message: "Valid amount is required",
-      });
-    }
-
-    const existingWallet = await pool.query(
-      `
-      SELECT id, balance
-      FROM wallets
-      WHERE user_id = $1
-      LIMIT 1
-      `,
-      [userId]
-    );
-
-    if (existingWallet.rows.length === 0) {
-      await pool.query(
-        `
-        INSERT INTO wallets (user_id, balance)
-        VALUES ($1, $2)
-        `,
-        [userId, 0]
-      );
-    }
-
-    const updateWallet = await pool.query(
-      `
-      UPDATE wallets
-      SET balance = balance + $1
-      WHERE user_id = $2
-      RETURNING balance
-      `,
-      [amount, userId]
-    );
-
-    await pool.query(
-      `
-      INSERT INTO transactions (
-        user_id,
-        amount,
-        type,
-        status,
-        reference,
-        created_at
-      )
-      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-      `,
-      [
-        userId,
-        amount,
-        "credit",
-        "success",
-        `FUND-${Date.now()}`,
-      ]
-    );
-
-    await pool.query(
-      `
-      INSERT INTO notifications (user_id, title, message, type)
-      VALUES ($1, $2, $3, $4)
-      `,
-      [
-        userId,
-        "Wallet funded",
-        `Your wallet was funded with ₦${amount.toLocaleString()}.`,
-        "wallet",
-      ]
-    );
-
-    return res.status(200).json({
-      message: "Wallet funded successfully",
-      wallet: updateWallet.rows[0],
-    });
-  } catch (error) {
-    console.error("FUND WALLET ERROR:", error);
-    return res.status(500).json({
-      message: "Server error while funding wallet",
       error: error.message,
     });
   }
@@ -220,6 +141,8 @@ exports.fundWallet = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
+    const userId = Number(req.user.id);
+
     const result = await pool.query(
       `
       SELECT id, title, message, type, is_read, created_at
@@ -227,7 +150,7 @@ exports.getNotifications = async (req, res) => {
       WHERE user_id = $1
       ORDER BY created_at DESC
       `,
-      [req.user.id]
+      [userId]
     );
 
     return res.status(200).json({
@@ -237,12 +160,40 @@ exports.getNotifications = async (req, res) => {
     console.error("GET NOTIFICATIONS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching notifications",
+      error: error.message,
+    });
+  }
+};
+
+exports.getSupportTickets = async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+
+    const result = await pool.query(
+      `
+      SELECT id, subject, category, message, status, created_at
+      FROM support_tickets
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    return res.status(200).json({
+      tickets: result.rows,
+    });
+  } catch (error) {
+    console.error("GET SUPPORT TICKETS ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while fetching support tickets",
+      error: error.message,
     });
   }
 };
 
 exports.createSupportTicket = async (req, res) => {
   try {
+    const userId = Number(req.user.id);
     const { subject, category, message } = req.body;
 
     if (!subject || !message) {
@@ -255,42 +206,26 @@ exports.createSupportTicket = async (req, res) => {
       `
       INSERT INTO support_tickets (user_id, subject, category, message, status)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
+      RETURNING id, subject, category, message, status, created_at
       `,
-      [req.user.id, subject, category || "general", message, "open"]
+      [
+        userId,
+        subject.trim(),
+        category || "general",
+        message.trim(),
+        "open",
+      ]
     );
 
     return res.status(201).json({
-      message: "Support ticket submitted successfully",
+      message: "Support ticket created successfully",
       ticket: result.rows[0],
     });
   } catch (error) {
     console.error("CREATE SUPPORT TICKET ERROR:", error);
     return res.status(500).json({
-      message: "Server error while submitting ticket",
-    });
-  }
-};
-
-exports.getSupportTickets = async (req, res) => {
-  try {
-    const result = await pool.query(
-      `
-      SELECT id, subject, category, message, status, created_at
-      FROM support_tickets
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-      `,
-      [req.user.id]
-    );
-
-    return res.status(200).json({
-      tickets: result.rows,
-    });
-  } catch (error) {
-    console.error("GET SUPPORT TICKETS ERROR:", error);
-    return res.status(500).json({
-      message: "Server error while fetching support tickets",
+      message: "Server error while creating support ticket",
+      error: error.message,
     });
   }
 };
