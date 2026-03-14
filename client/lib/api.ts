@@ -107,6 +107,8 @@ export const rideApi = {
       token,
     }),
 
+    
+
   getRideById: (rideId: number | string, token?: string | null) =>
     apiRequest(`/api/rides/${rideId}`, {
       method: "GET",
@@ -252,6 +254,12 @@ export const driverApi = {
       token,
     }),
 
+    getDrivers: (token?: string | null) =>
+  apiRequest("/api/admin/drivers", {
+    method: "GET",
+    token,
+  }),
+
   getNotifications: (token?: string | null) =>
     apiRequest("/api/driver/notifications", {
       method: "GET",
@@ -287,6 +295,7 @@ export const paymentApi = {
       token,
     }),
 };
+
 
 export const adminApi = {
   getDashboard: (token?: string | null) =>
