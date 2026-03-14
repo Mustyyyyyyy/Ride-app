@@ -3,57 +3,32 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import useAuth from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, loading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const user = await login({
+        email,
+        password,
       });
 
-      const data = await res.json();
-      console.log("LOGIN RESPONSE:", data);
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Login failed");
-      }
-
-      if (!data?.user) {
-        throw new Error("No user returned from backend");
-      }
-
-      const token = data?.token || "demo-token-123";
-
-      localStorage.setItem("oride_token", token);
-      localStorage.setItem("oride_user", JSON.stringify(data.user));
-
-      console.log("SAVED TOKEN:", localStorage.getItem("oride_token"));
-      console.log("SAVED USER:", localStorage.getItem("oride_user"));
-
-      if (data.user.role === "driver") {
+      if (user.role === "driver") {
         router.replace("/driver/dashboard");
         return;
       }
 
-      if (data.user.role === "admin") {
+      if (user.role === "admin") {
         router.replace("/admin/dashboard");
         return;
       }
@@ -62,8 +37,6 @@ export default function LoginPage() {
     } catch (err: any) {
       console.log("LOGIN ERROR:", err);
       setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -136,7 +109,10 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-slate-400">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-green-300 hover:text-green-200">
+            <Link
+              href="/register"
+              className="font-semibold text-green-300 hover:text-green-200"
+            >
               Create one
             </Link>
           </p>

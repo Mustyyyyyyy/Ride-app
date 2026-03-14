@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL || "https://ride-app-g57x.onrender.com";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";

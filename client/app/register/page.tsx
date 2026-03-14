@@ -13,15 +13,13 @@ function getRedirectPath(role: string) {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loading } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"passenger" | "driver">("passenger");
-
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -29,8 +27,6 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      setLoading(true);
-
       const user = await register({
         name,
         email,
@@ -42,8 +38,6 @@ export default function RegisterPage() {
       router.push(getRedirectPath(user.role));
     } catch (err: any) {
       setError(err.message || "Registration failed");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -160,7 +154,10 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-slate-400">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-green-300 hover:text-green-200">
+            <Link
+              href="/login"
+              className="font-semibold text-green-300 hover:text-green-200"
+            >
               Login
             </Link>
           </p>
