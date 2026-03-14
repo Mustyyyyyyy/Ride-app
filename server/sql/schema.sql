@@ -1,0 +1,113 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(120) UNIQUE NOT NULL,
+  phone VARCHAR(30) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'passenger',
+  is_verified BOOLEAN DEFAULT TRUE,
+  profile_image TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS driver_profiles (
+  id SERIAL PRIMARY KEY,
+  user_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  vehicle_type VARCHAR(50),
+  vehicle_brand VARCHAR(50),
+  vehicle_model VARCHAR(50),
+  plate_number VARCHAR(50),
+  license_number VARCHAR(80),
+  profile_photo TEXT,
+  drivers_license_image TEXT,
+  vehicle_image TEXT,
+  is_approved BOOLEAN DEFAULT FALSE,
+  is_online BOOLEAN DEFAULT FALSE,
+  is_available BOOLEAN DEFAULT TRUE,
+  rating NUMERIC(3,2) DEFAULT 5.00,
+  total_rides INT DEFAULT 0,
+  current_lat NUMERIC(10,7),
+  current_lng NUMERIC(10,7),
+  current_address TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS wallets (
+  id SERIAL PRIMARY KEY,
+  user_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  balance NUMERIC(12,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id SERIAL PRIMARY KEY,
+  wallet_id INT NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL,
+  amount NUMERIC(12,2) NOT NULL,
+  description TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'success',
+  reference VARCHAR(120),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS rides (
+  id SERIAL PRIMARY KEY,
+  passenger_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  driver_id INT REFERENCES users(id) ON DELETE SET NULL,
+  pickup TEXT NOT NULL,
+  dropoff TEXT NOT NULL,
+  fare NUMERIC(12,2) DEFAULT 0,
+  distance_km NUMERIC(10,2) DEFAULT 0,
+  status VARCHAR(20) DEFAULT 'pending',
+  payment_method VARCHAR(20) DEFAULT 'cash',
+  requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  accepted_at TIMESTAMP,
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  type VARCHAR(30) DEFAULT 'system',
+  is_read BOOLEAN DEFAULT FALSE,
+  ride_id INT REFERENCES rides(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject VARCHAR(200) NOT NULL,
+  category VARCHAR(50) DEFAULT 'other',
+  message TEXT NOT NULL,
+  status VARCHAR(30) DEFAULT 'open',
+  admin_response TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS safety_reports (
+  id SERIAL PRIMARY KEY,
+  ride_id INT NOT NULL REFERENCES rides(id) ON DELETE CASCADE,
+  reported_by_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  passenger_id INT REFERENCES users(id) ON DELETE SET NULL,
+  driver_id INT REFERENCES users(id) ON DELETE SET NULL,
+  issue_type VARCHAR(50) DEFAULT 'other',
+  description TEXT NOT NULL,
+  status VARCHAR(30) DEFAULT 'open',
+  priority VARCHAR(20) DEFAULT 'medium',
+  admin_note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
