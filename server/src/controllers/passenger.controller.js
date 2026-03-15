@@ -105,7 +105,7 @@ exports.getWallet = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("GET WALLET ERROR:", error);
+    console.error("GET PASSENGER WALLET ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching wallet",
       error: error.message,
@@ -128,10 +128,10 @@ exports.getTransactions = async (req, res) => {
     );
 
     return res.status(200).json({
-      transactions: result.rows,
+      transactions: result.rows || [],
     });
   } catch (error) {
-    console.error("GET TRANSACTIONS ERROR:", error);
+    console.error("GET PASSENGER TRANSACTIONS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching transactions",
       error: error.message,
@@ -154,10 +154,10 @@ exports.getNotifications = async (req, res) => {
     );
 
     return res.status(200).json({
-      notifications: result.rows,
+      notifications: result.rows || [],
     });
   } catch (error) {
-    console.error("GET NOTIFICATIONS ERROR:", error);
+    console.error("GET PASSENGER NOTIFICATIONS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching notifications",
       error: error.message,
@@ -180,10 +180,10 @@ exports.getSupportTickets = async (req, res) => {
     );
 
     return res.status(200).json({
-      tickets: result.rows,
+      tickets: result.rows || [],
     });
   } catch (error) {
-    console.error("GET SUPPORT TICKETS ERROR:", error);
+    console.error("GET PASSENGER SUPPORT TICKETS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching support tickets",
       error: error.message,
@@ -222,7 +222,7 @@ exports.createSupportTicket = async (req, res) => {
       ticket: result.rows[0],
     });
   } catch (error) {
-    console.error("CREATE SUPPORT TICKET ERROR:", error);
+    console.error("CREATE PASSENGER SUPPORT TICKET ERROR:", error);
     return res.status(500).json({
       message: "Server error while creating support ticket",
       error: error.message,

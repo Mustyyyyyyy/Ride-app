@@ -85,12 +85,43 @@ exports.getUsers = async (req, res) => {
     );
 
     return res.status(200).json({
-      users: result.rows,
+      users: result.rows || [],
     });
   } catch (error) {
     console.error("GET ADMIN USERS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching users",
+      error: error.message,
+    });
+  }
+};
+
+exports.getSupportTickets = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        s.id,
+        s.subject,
+        s.category,
+        s.message,
+        s.status,
+        s.created_at,
+        u.name AS user_name,
+        u.email AS user_email
+      FROM support_tickets s
+      INNER JOIN users u ON s.user_id = u.id
+      ORDER BY s.created_at DESC
+      `
+    );
+
+    return res.status(200).json({
+      tickets: result.rows || [],
+    });
+  } catch (error) {
+    console.error("GET ADMIN SUPPORT TICKETS ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while fetching support tickets",
       error: error.message,
     });
   }
