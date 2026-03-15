@@ -5,6 +5,8 @@ import { driverApi } from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
 import AvailableRideCard from "@/components/driver/AvailableRideCard";
 import { getSocket } from "@/lib/socket";
+import PageTransition from "@/components/ui/PageTransition";
+import AnimatedCard from "@/components/ui/AnimatedCard";
 
 export default function DriverAvailableRidesPage() {
   const { token } = useAuth();
@@ -87,50 +89,52 @@ export default function DriverAvailableRidesPage() {
   };
 
   return (
-    <main className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-black text-white">Available Rides</h1>
+    <PageTransition>
+      <main className="space-y-6">
+        <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-3xl font-black text-gray-900">Available Rides</h1>
 
-          <span
-            className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
-              isOnline
-                ? "bg-green-500/15 text-green-300"
-                : "bg-red-500/15 text-red-300"
-            }`}
-          >
-            {isOnline ? "Online" : "Offline"}
-          </span>
-        </div>
-
-        <p className="mt-2 text-sm text-slate-400">
-          {isOnline
-            ? "You are online and will receive ride requests instantly."
-            : "Go online from your profile page to receive rides."}
-        </p>
-      </div>
-
-      {message ? <p className="text-green-300">{message}</p> : null}
-      {error ? <p className="text-red-300">{error}</p> : null}
-
-      <section className="grid gap-4">
-        {!isOnline ? (
-          <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6 text-slate-300">
-            You are offline. Turn on <span className="font-semibold text-white">Go Online</span> from your profile to receive ride requests.
+            <span
+              className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
+                isOnline
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-600"
+              }`}
+            >
+              {isOnline ? "Online" : "Offline"}
+            </span>
           </div>
-        ) : rides.length ? (
-          rides.map((ride) => (
-            <AvailableRideCard
-              key={ride.id}
-              ride={ride}
-              onAccept={handleAccept}
-              accepting={acceptingId === ride.id}
-            />
-          ))
-        ) : (
-          <p className="text-slate-400">No available rides right now.</p>
-        )}
-      </section>
-    </main>
+
+          <p className="mt-2 text-sm text-gray-500">
+            {isOnline
+              ? "You are online and will receive ride requests instantly."
+              : "Go online from your profile page to receive rides."}
+          </p>
+        </AnimatedCard>
+
+        {message ? <p className="text-green-700">{message}</p> : null}
+        {error ? <p className="text-red-600">{error}</p> : null}
+
+        <section className="grid gap-4">
+          {!isOnline ? (
+            <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm text-gray-600">
+              You are offline. Turn on <span className="font-semibold text-gray-900">Go Online</span> from your profile to receive ride requests.
+            </AnimatedCard>
+          ) : rides.length ? (
+            rides.map((ride) => (
+              <AvailableRideCard
+                key={ride.id}
+                ride={ride}
+                onAccept={handleAccept}
+                accepting={acceptingId === ride.id}
+              />
+            ))
+          ) : (
+            <p className="text-gray-500">No available rides right now.</p>
+          )}
+        </section>
+      </main>
+    </PageTransition>
   );
 }

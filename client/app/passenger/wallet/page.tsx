@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { passengerApi, paymentApi } from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
+import PageTransition from "@/components/ui/PageTransition";
+import AnimatedCard from "@/components/ui/AnimatedCard";
 
 export default function PassengerWalletPage() {
   const { token, hydrated } = useAuth();
@@ -49,76 +51,78 @@ export default function PassengerWalletPage() {
   }, [hydrated, token]);
 
   if (!hydrated || loading) {
-    return <main className="text-white">Loading wallet...</main>;
+    return <main className="text-gray-900">Loading wallet...</main>;
   }
 
   return (
-    <main className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-        <h1 className="text-3xl font-black text-white">Wallet</h1>
-      </div>
+    <PageTransition>
+      <main className="space-y-6">
+        <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-black text-gray-900">Wallet</h1>
+        </AnimatedCard>
 
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="space-y-6">
-          <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-            <p className="text-sm text-slate-400">Available Balance</p>
-            <h2 className="mt-3 text-5xl font-black text-white">
-              ₦{balance.toLocaleString()}
-            </h2>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <section className="space-y-6">
+            <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+              <p className="text-sm text-gray-500">Available Balance</p>
+              <h2 className="mt-3 text-5xl font-black text-green-700">
+                ₦{balance.toLocaleString()}
+              </h2>
+            </AnimatedCard>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-            <h2 className="text-2xl font-black text-white">Fund by Transfer</h2>
-            <p className="mt-2 text-slate-400">
-              Transfer to the account below.
-            </p>
+            <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-black text-gray-900">Fund by Transfer</h2>
+              <p className="mt-2 text-gray-500">
+                Transfer to the account below. Your wallet updates after payment confirmation.
+              </p>
 
-            {account ? (
-              <div className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-white">
-                  <strong>Bank:</strong> {account.bank_name}
-                </p>
-                <p className="text-white">
-                  <strong>Account Number:</strong> {account.account_number}
-                </p>
-                <p className="text-white">
-                  <strong>Account Name:</strong> {account.account_name}
-                </p>
-              </div>
-            ) : (
-              <p className="mt-4 text-slate-400">No transfer account available yet.</p>
-            )}
-
-            {error ? <p className="mt-4 text-red-300">{error}</p> : null}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-          <h2 className="text-2xl font-black text-white">Transactions</h2>
-          <div className="mt-4 space-y-3">
-            {transactions.length ? (
-              transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-white">{tx.type}</p>
-                    <p className="text-sm text-slate-400">
-                      {tx.reference || "No reference"}
-                    </p>
-                  </div>
-                  <p className="font-bold text-white">
-                    ₦{Number(tx.amount || 0).toLocaleString()}
+              {account ? (
+                <div className="mt-5 space-y-3 rounded-2xl border border-green-100 bg-green-50 p-4">
+                  <p className="text-gray-900">
+                    <strong>Bank:</strong> {account.bank_name}
+                  </p>
+                  <p className="text-gray-900">
+                    <strong>Account Number:</strong> {account.account_number}
+                  </p>
+                  <p className="text-gray-900">
+                    <strong>Account Name:</strong> {account.account_name}
                   </p>
                 </div>
-              ))
-            ) : (
-              <p className="text-slate-400">No transactions yet.</p>
-            )}
-          </div>
-        </section>
-      </div>
-    </main>
+              ) : (
+                <p className="mt-4 text-gray-500">No transfer account available yet.</p>
+              )}
+
+              {error ? <p className="mt-4 text-red-600">{error}</p> : null}
+            </AnimatedCard>
+          </section>
+
+          <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black text-gray-900">Transactions</h2>
+            <div className="mt-4 space-y-3">
+              {transactions.length ? (
+                transactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between rounded-xl border border-green-100 bg-green-50 p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">{tx.type}</p>
+                      <p className="text-sm text-gray-500">
+                        {tx.reference || "No reference"}
+                      </p>
+                    </div>
+                    <p className="font-bold text-gray-900">
+                      ₦{Number(tx.amount || 0).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No transactions yet.</p>
+              )}
+            </div>
+          </AnimatedCard>
+        </div>
+      </main>
+    </PageTransition>
   );
 }

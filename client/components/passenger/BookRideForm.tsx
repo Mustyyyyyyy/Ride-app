@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import { rideApi } from "@/lib/api";
+import AnimatedCard from "@/components/ui/AnimatedCard";
+import AnimatedButton from "@/components/ui/AnimatedButton";
 
 export default function BookRideForm() {
   const { user, token } = useAuth();
@@ -60,17 +62,17 @@ export default function BookRideForm() {
   };
 
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
+    <AnimatedCard className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm">
       <div className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-300">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-600">
           Quick Booking
         </p>
-        <h2 className="mt-2 text-2xl font-black text-white">Request a Ride</h2>
+        <h2 className="mt-2 text-2xl font-black text-gray-900">Request a Ride</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-200">
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
             Pickup location
           </label>
           <input
@@ -78,12 +80,12 @@ export default function BookRideForm() {
             value={pickup}
             onChange={(e) => setPickup(e.target.value)}
             placeholder="Enter pickup point"
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-green-500"
+            className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-green-500"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-200">
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
             Destination
           </label>
           <input
@@ -91,19 +93,19 @@ export default function BookRideForm() {
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
             placeholder="Enter destination"
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-green-500"
+            className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-green-500"
           />
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-200">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Ride type
             </label>
             <select
               value={rideType}
               onChange={(e) => setRideType(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-green-500"
+              className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-500"
             >
               <option value="standard">Standard</option>
               <option value="comfort">Comfort</option>
@@ -112,23 +114,22 @@ export default function BookRideForm() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-200">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Payment method
             </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-green-500"
+              className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-500"
             >
               <option value="wallet">Wallet</option>
               <option value="cash">Cash</option>
-              <option value="card">Card</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-200">
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
             Additional note
           </label>
           <textarea
@@ -136,30 +137,30 @@ export default function BookRideForm() {
             onChange={(e) => setNote(e.target.value)}
             rows={4}
             placeholder="Any pickup instruction?"
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-green-500"
+            className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-green-500"
           />
         </div>
 
         {message ? (
-          <div className="rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+          <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
             {message}
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         ) : null}
 
-        <button
+        <AnimatedButton
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 font-bold text-white disabled:opacity-70"
+          className="w-full rounded-2xl bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-70"
         >
           {loading ? "Creating Ride..." : "Confirm Ride Request"}
-        </button>
+        </AnimatedButton>
       </form>
-    </section>
+    </AnimatedCard>
   );
 }

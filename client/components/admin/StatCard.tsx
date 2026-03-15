@@ -1,3 +1,7 @@
+"use client";
+
+import AnimatedCard from "@/components/ui/AnimatedCard";
+
 type Props = {
   title: string;
   value: string | number;
@@ -6,10 +10,10 @@ type Props = {
 
 export default function StatCard({ title, value, subtitle }: Props) {
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-5">
-      <p className="text-sm text-slate-400">{title}</p>
-      <h3 className="mt-3 text-3xl font-black text-white">{value}</h3>
-      {subtitle ? <p className="mt-2 text-sm text-slate-500">{subtitle}</p> : null}
-    </div>
+    <AnimatedCard className="rounded-[2rem] border border-green-100 bg-white p-5 shadow-sm">
+      <p className="text-sm text-gray-500">{title}</p>
+      <h3 className="mt-3 text-3xl font-black text-green-700">{value}</h3>
+      {subtitle ? <p className="mt-2 text-sm text-gray-500">{subtitle}</p> : null}
+    </AnimatedCard>
   );
 }

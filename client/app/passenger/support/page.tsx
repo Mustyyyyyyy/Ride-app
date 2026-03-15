@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import { passengerApi } from "@/lib/api";
+import PageTransition from "@/components/ui/PageTransition";
+import AnimatedCard from "@/components/ui/AnimatedCard";
+import AnimatedButton from "@/components/ui/AnimatedButton";
 
 export default function PassengerSupportPage() {
   const { token, hydrated } = useAuth();
@@ -72,76 +75,78 @@ export default function PassengerSupportPage() {
   };
 
   if (!hydrated || loading) {
-    return <main className="text-white">Loading support...</main>;
+    return <main className="text-gray-900">Loading support...</main>;
   }
 
   return (
-    <main className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-        <h1 className="text-3xl font-black text-white">Support</h1>
-      </div>
+    <PageTransition>
+      <main className="space-y-6">
+        <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-black text-gray-900">Support</h1>
+        </AnimatedCard>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-        <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Subject"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white"
-            />
+        <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+          <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Subject"
+                className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              />
 
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white"
-            >
-              <option value="general">General</option>
-              <option value="ride">Ride Issue</option>
-              <option value="payment">Payment Issue</option>
-              <option value="wallet">Wallet</option>
-            </select>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              >
+                <option value="general">General</option>
+                <option value="ride">Ride Issue</option>
+                <option value="payment">Payment Issue</option>
+                <option value="wallet">Wallet</option>
+              </select>
 
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={5}
-              placeholder="Explain the issue"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white"
-            />
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={5}
+                placeholder="Explain the issue"
+                className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              />
 
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 font-bold text-white"
-            >
-              Submit Ticket
-            </button>
+              <AnimatedButton
+                type="submit"
+                className="w-full rounded-2xl bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700"
+              >
+                Submit Ticket
+              </AnimatedButton>
 
-            {feedback ? <p className="text-green-300">{feedback}</p> : null}
-            {error ? <p className="text-red-300">{error}</p> : null}
-          </form>
-        </section>
+              {feedback ? <p className="text-green-700">{feedback}</p> : null}
+              {error ? <p className="text-red-600">{error}</p> : null}
+            </form>
+          </AnimatedCard>
 
-        <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
-          <h2 className="text-2xl font-black text-white">My Tickets</h2>
-          <div className="mt-4 space-y-3">
-            {tickets.length ? (
-              tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className="rounded-xl border border-white/10 bg-slate-950/50 p-4"
-                >
-                  <p className="font-bold text-white">{ticket.subject}</p>
-                  <p className="mt-1 text-sm text-slate-400">{ticket.category}</p>
-                  <p className="mt-1 text-sm text-slate-400">{ticket.status}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-slate-400">No support tickets yet.</p>
-            )}
-          </div>
-        </section>
-      </div>
-    </main>
+          <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black text-gray-900">My Tickets</h2>
+            <div className="mt-4 space-y-3">
+              {tickets.length ? (
+                tickets.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="rounded-xl border border-green-100 bg-green-50 p-4"
+                  >
+                    <p className="font-bold text-gray-900">{ticket.subject}</p>
+                    <p className="mt-1 text-sm text-gray-600">{ticket.category}</p>
+                    <p className="mt-1 text-sm text-gray-600">{ticket.status}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No support tickets yet.</p>
+              )}
+            </div>
+          </AnimatedCard>
+        </div>
+      </main>
+    </PageTransition>
   );
 }

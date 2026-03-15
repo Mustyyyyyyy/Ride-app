@@ -16,15 +16,15 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-full rounded-[2rem] border border-white/10 bg-slate-900/70 p-5 lg:w-72">
+    <aside className="w-full rounded-[2rem] border border-green-100 bg-white p-5 shadow-sm lg:w-72">
       <div className="mb-8">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-green-500 text-lg font-black text-slate-950">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-green-600 text-lg font-black text-white">
             O
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">ORIDE</h2>
-            <p className="text-sm text-slate-400">Admin Panel</p>
+            <h2 className="text-2xl font-black text-green-700">ORIDE</h2>
+            <p className="text-sm text-gray-500">Admin Panel</p>
           </div>
         </div>
       </div>
@@ -32,14 +32,15 @@ export default function AdminSidebar() {
       <nav className="space-y-2">
         {links.map((link) => {
           const active = pathname === link.href;
+
           return (
             <Link
               key={link.href}
               href={link.href}
               className={`block rounded-2xl px-4 py-3 font-semibold transition ${
                 active
-                  ? "bg-green-500 text-slate-950"
-                  : "bg-slate-950/60 text-slate-200 hover:bg-slate-800"
+                  ? "bg-green-600 text-white"
+                  : "bg-green-50 text-gray-700 hover:bg-green-100"
               }`}
             >
               {link.label}

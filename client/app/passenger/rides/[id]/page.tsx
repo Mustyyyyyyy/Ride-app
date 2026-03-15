@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { passengerApi } from "@/lib/api";
 import useAuth from "@/hooks/useAuth";
+import PageTransition from "@/components/ui/PageTransition";
+import AnimatedCard from "@/components/ui/AnimatedCard";
 
 export default function PassengerRideDetailsPage() {
   const params = useParams();
@@ -41,46 +43,50 @@ export default function PassengerRideDetailsPage() {
   }, [id, token, hydrated]);
 
   if (!hydrated || loading) {
-    return <main className="text-white">Loading ride details...</main>;
+    return <main className="text-gray-900">Loading ride details...</main>;
   }
 
   if (error) {
     return (
-      <main className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-red-300">
+      <main className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
         {error}
       </main>
     );
   }
 
   if (!ride) {
-    return <main className="text-white">Ride not found</main>;
+    return <main className="text-gray-900">Ride not found</main>;
   }
 
   return (
-    <main className="space-y-6">
-      <h1 className="text-3xl font-bold text-white">Ride Details</h1>
+    <PageTransition>
+      <main className="space-y-6">
+        <AnimatedCard className="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-bold text-gray-900">Ride Details</h1>
+        </AnimatedCard>
 
-      <div className="rounded-xl border border-white/10 bg-slate-900 p-6">
-        <p className="text-white">
-          <strong>Pickup:</strong> {ride.pickup}
-        </p>
+        <AnimatedCard className="rounded-xl border border-green-100 bg-white p-6 shadow-sm">
+          <p className="text-gray-900">
+            <strong>Pickup:</strong> {ride.pickup}
+          </p>
 
-        <p className="text-white">
-          <strong>Dropoff:</strong> {ride.dropoff}
-        </p>
+          <p className="text-gray-900">
+            <strong>Dropoff:</strong> {ride.dropoff}
+          </p>
 
-        <p className="text-white">
-          <strong>Status:</strong> {ride.status}
-        </p>
+          <p className="text-gray-900">
+            <strong>Status:</strong> {ride.status}
+          </p>
 
-        <p className="text-white">
-          <strong>Price:</strong> ₦{Number(ride.price || 0).toLocaleString()}
-        </p>
+          <p className="text-gray-900">
+            <strong>Price:</strong> ₦{Number(ride.price || 0).toLocaleString()}
+          </p>
 
-        <p className="text-white">
-          <strong>Driver:</strong> {ride.driver_name || "Waiting for driver"}
-        </p>
-      </div>
-    </main>
+          <p className="text-gray-900">
+            <strong>Driver:</strong> {ride.driver_name || "Waiting for driver"}
+          </p>
+        </AnimatedCard>
+      </main>
+    </PageTransition>
   );
 }
