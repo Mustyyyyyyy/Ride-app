@@ -1,254 +1,413 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const features = [
   {
-    title: "Fast ride booking",
-    text: "Request a ride in seconds with a clean, mobile-first experience built for speed and clarity.",
+    title: "Fast Ride Booking",
+    text: "Book a ride in seconds with a clean and simple passenger flow.",
   },
   {
-    title: "Live driver flow",
-    text: "Track driver acceptance, ride progress, and trip completion with real-time ride events.",
+    title: "Driver Management",
+    text: "Drivers can go online, accept trips, manage earnings, and track activity.",
   },
   {
-    title: "Wallet and trip history",
-    text: "Manage balances, monitor payments, and review past rides from one polished dashboard.",
+    title: "Wallet & Payments",
+    text: "Manage wallet funding, trip deductions, and financial records in one place.",
   },
   {
-    title: "Admin visibility",
-    text: "Oversee drivers, passengers, rides, support tickets, and safety reports from a powerful back office.",
+    title: "Real-Time Operations",
+    text: "Built to support live ride flow, trip status updates, and admin monitoring.",
   },
-];
-
-const stats = [
-  { label: "Average wait time", value: "3 min" },
-  { label: "Driver uptime", value: "99.9%" },
-  { label: "Cities ready", value: "12+" },
 ];
 
 const steps = [
   {
     number: "01",
     title: "Create an account",
-    text: "Register as a passenger, driver, or admin with a secure role-based flow.",
+    text: "Sign up as a passenger or driver and access the right dashboard instantly.",
   },
   {
     number: "02",
-    title: "Connect to live rides",
-    text: "Book rides, accept requests, and receive status updates instantly.",
+    title: "Request or accept rides",
+    text: "Passengers book rides while drivers receive and manage active requests.",
   },
   {
     number: "03",
-    title: "Manage everything",
-    text: "Control operations across dashboards, wallet, notifications, support, and more.",
+    title: "Track trips and payments",
+    text: "Follow ride activity, wallet balance, trip history, and notifications.",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="oride-shell oride-grid-bg">
-      <section className="border-b border-white/10">
-        <div className="oride-container flex items-center justify-between py-5">
+    <main className="min-h-screen bg-gradient-to-b from-white via-green-50 to-white text-gray-900">
+      <header className="sticky top-0 z-40 border-b border-green-100 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4">
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500 font-black text-slate-950 shadow-lg shadow-green-500/25">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-green-600 text-lg font-black text-white">
               O
             </div>
             <div>
-              <p className="text-lg font-black tracking-tight text-white">ORIDE</p>
-              <p className="text-xs text-slate-400">Ride smarter, move faster</p>
+              <h1 className="text-xl font-black text-green-700">ORIDE</h1>
+              <p className="text-xs text-gray-500">Smarter urban transport</p>
             </div>
           </Link>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <nav className="hidden items-center gap-8 md:flex">
+            <a href="#features" className="text-sm font-semibold text-gray-600 hover:text-green-700">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-sm font-semibold text-gray-600 hover:text-green-700">
+              How it works
+            </a>
+            <a href="#roles" className="text-sm font-semibold text-gray-600 hover:text-green-700">
+              Roles
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:text-white"
+              className="rounded-2xl border border-green-100 bg-white px-4 py-2.5 text-sm font-bold text-green-700 transition hover:bg-green-50"
             >
               Login
             </Link>
+
             <Link
               href="/register"
-              className="oride-btn-primary rounded-full px-5 py-2.5 text-sm font-semibold"
+              className="rounded-2xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700"
             >
               Get Started
             </Link>
           </div>
         </div>
-      </section>
+      </header>
 
-      <section className="relative overflow-hidden">
-        <div className="oride-container grid gap-10 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
-          <div className="flex flex-col justify-center">
-            <div className="oride-badge mb-6 w-fit">
-              <span className="oride-dot" />
-              Real-time ride platform
+      <section className="px-4 pb-16 pt-10 md:pb-24 md:pt-16">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+              <span className="text-xs font-bold uppercase tracking-[0.22em] text-green-700">
+                Mobility Platform
+              </span>
             </div>
 
-            <h1 className="oride-section-title max-w-4xl">
-              Build, scale, and manage your{" "}
-              <span className="oride-text-gradient">next-generation ride app</span>.
-            </h1>
+            <h2 className="mt-6 max-w-3xl text-5xl font-black leading-tight tracking-tight text-gray-900 md:text-6xl">
+              A modern ride platform for{" "}
+              <span className="text-green-700">passengers, drivers, and admins</span>.
+            </h2>
 
-            <p className="oride-section-subtitle mt-6 max-w-2xl">
-              ORIDE is a modern ride-hailing platform designed for passengers, drivers. It combines fast booking, role-based dashboards, wallet,
-              support, and real-time trip events into one clean product experience.
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-600">
+              ORIDE helps passengers request rides quickly, gives drivers control over trips and earnings,
+              and lets administrators manage the platform from one clean dashboard.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/register"
-                className="oride-btn-primary rounded-2xl px-6 py-4 text-center font-bold"
+                className="rounded-2xl bg-green-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-green-700"
               >
                 Create Account
               </Link>
+
               <Link
                 href="/login"
-                className="oride-btn-secondary rounded-2xl px-6 py-4 text-center font-bold"
+                className="rounded-2xl border border-green-100 bg-white px-6 py-3.5 text-sm font-bold text-green-700 transition hover:bg-green-50"
               >
                 Sign In
               </Link>
             </div>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {stats.map((item) => (
-                <div
-                  key={item.label}
-                  className="oride-glass rounded-2xl px-5 py-4"
-                >
-                  <p className="text-2xl font-black text-white">{item.value}</p>
-                  <p className="mt-1 text-sm text-slate-400">{item.label}</p>
-                </div>
-              ))}
+              <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm">
+                <p className="text-sm text-gray-500">Passengers</p>
+                <h3 className="mt-2 text-2xl font-black text-green-700">Easy booking</h3>
+              </div>
+
+              <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm">
+                <p className="text-sm text-gray-500">Drivers</p>
+                <h3 className="mt-2 text-2xl font-black text-green-700">Trip control</h3>
+              </div>
+
+              <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm">
+                <p className="text-sm text-gray-500">Admin</p>
+                <h3 className="mt-2 text-2xl font-black text-green-700">Live oversight</h3>
+              </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex items-center">
-            <div className="oride-glass w-full rounded-[2rem] p-5">
-              <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/60 p-5">
-                <div className="mb-5 flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="relative"
+          >
+            <div className="rounded-[2rem] border border-green-100 bg-white p-5 shadow-sm md:p-6">
+              <div className="rounded-[1.7rem] border border-green-100 bg-gradient-to-br from-green-600 via-green-500 to-emerald-500 p-6 text-white">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm text-slate-400">Live dispatch overview</p>
-                    <h2 className="mt-1 text-xl font-black text-white">
-                      Operational command panel
-                    </h2>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-100">
+                      ORIDE Overview
+                    </p>
+                    <h3 className="mt-3 text-3xl font-black leading-tight">
+                      Clean transport workflow with modern control.
+                    </h3>
                   </div>
-                  <div className="rounded-full border border-green-500/25 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-300">
-                    Active
+
+                  <div className="rounded-2xl bg-white/15 px-3 py-2 text-sm font-bold">
+                    Live
                   </div>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-white">Passenger trip</p>
-                      <span className="text-xs text-green-300">Matched</span>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-400">
-                      Challenge, Ibadan → UI Gate
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                    <p className="text-sm text-green-50">Wallet</p>
+                    <h4 className="mt-2 text-2xl font-black">Smart funding</h4>
+                    <p className="mt-2 text-sm text-green-50/90">
+                      Handle wallet activity and payments with a simpler flow.
                     </p>
-                    <div className="mt-4 h-2 rounded-full bg-slate-800">
-                      <div className="h-2 w-3/4 rounded-full bg-gradient-to-r from-green-400 to-sky-400" />
-                    </div>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-sm text-slate-400">Online drivers</p>
-                      <p className="mt-2 text-3xl font-black text-white">128</p>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-sm text-slate-400">Completed today</p>
-                      <p className="mt-2 text-3xl font-black text-white">1,482</p>
-                    </div>
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                    <p className="text-sm text-green-50">Trips</p>
+                    <h4 className="mt-2 text-2xl font-black">Ride lifecycle</h4>
+                    <p className="mt-2 text-sm text-green-50/90">
+                      Manage request, acceptance, progress, and completion stages.
+                    </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {[
-                        "Auth",
-                        "Wallet",
-                        "Rides",
-                        "Drivers",
-                        "Notifications",
-                        "Admin",
-                      ].map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-full border border-white/10 bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-slate-200"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                    <p className="text-sm text-green-50">Support</p>
+                    <h4 className="mt-2 text-2xl font-black">Issue tracking</h4>
+                    <p className="mt-2 text-sm text-green-50/90">
+                      Keep riders and drivers connected through structured support.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                    <p className="text-sm text-green-50">Admin</p>
+                    <h4 className="mt-2 text-2xl font-black">Operational view</h4>
+                    <p className="mt-2 text-sm text-green-50/90">
+                      Monitor users, rides, drivers, and support activity.
+                    </p>
                   </div>
                 </div>
               </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
+                  <p className="text-sm text-gray-500">Passengers</p>
+                  <p className="mt-2 text-xl font-black text-green-700">Request rides</p>
+                </div>
+                <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
+                  <p className="text-sm text-gray-500">Drivers</p>
+                  <p className="mt-2 text-xl font-black text-green-700">Manage trips</p>
+                </div>
+                <div className="rounded-2xl border border-green-100 bg-green-50 p-4">
+                  <p className="text-sm text-gray-500">Admins</p>
+                  <p className="mt-2 text-xl font-black text-green-700">Control platform</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      <section className="pb-6">
-        <div className="oride-container">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {features.map((feature) => (
-              <div key={feature.title} className="oride-card p-6">
-                <div className="mb-4 h-12 w-12 rounded-2xl bg-green-500/15 text-green-300" />
-                <h3 className="text-lg font-bold text-white">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{feature.text}</p>
-              </div>
+      <section id="features" className="px-4 py-16 md:py-24">
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="max-w-2xl">
+            <p className="inline-flex rounded-full border border-green-200 bg-green-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-green-700">
+              Features
+            </p>
+            <h2 className="mt-5 text-4xl font-black tracking-tight text-gray-900 md:text-5xl">
+              Built to run a modern ride operation from one platform
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-gray-600">
+              ORIDE combines booking, driver tools, support handling, wallet management,
+              and admin control into a cleaner product experience.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {features.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35, delay: index * 0.06 }}
+                className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm"
+              >
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-lg font-black text-green-700">
+                  0{index + 1}
+                </div>
+                <h3 className="mt-5 text-xl font-black text-gray-900">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-gray-600">{item.text}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-14 lg:py-20">
-        <div className="oride-container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <section id="how-it-works" className="px-4 py-16 md:py-24">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-green-300">
+            <p className="inline-flex rounded-full border border-green-200 bg-green-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-green-700">
               How it works
             </p>
-            <h2 className="oride-section-title mt-3 max-w-xl">
-              A clean workflow from onboarding to active trips.
+            <h2 className="mt-5 text-4xl font-black tracking-tight text-gray-900 md:text-5xl">
+              A simple flow from onboarding to active ride operations
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-gray-600">
+              Whether you are booking a ride, driving for the platform, or managing the system,
+              the workflow stays organized and easy to follow.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, x: 18 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.35, delay: index * 0.08 }}
+                className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm"
+              >
+                <div className="flex gap-5">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-lg font-black text-white">
+                    {step.number}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900">{step.title}</h3>
+                    <p className="mt-2 text-sm leading-7 text-gray-600">{step.text}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="roles" className="px-4 py-16 md:py-24">
+        <div className="mx-auto w-full max-w-7xl">
+          <div className="max-w-2xl">
+            <p className="inline-flex rounded-full border border-green-200 bg-green-50 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-green-700">
+              Roles
+            </p>
+            <h2 className="mt-5 text-4xl font-black tracking-tight text-gray-900 md:text-5xl">
+              Designed for every part of the platform
             </h2>
           </div>
 
-          <div className="grid gap-4">
-            {steps.map((step) => (
-              <div
-                key={step.number}
-                className="oride-glass flex gap-4 rounded-3xl p-5"
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35 }}
+              className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm"
+            >
+              <h3 className="text-2xl font-black text-gray-900">Passenger</h3>
+              <p className="mt-4 text-sm leading-7 text-gray-600">
+                Book rides, check ride status, manage wallet balance, and track notifications and support tickets.
+              </p>
+              <Link
+                href="/register"
+                className="mt-6 inline-flex rounded-2xl bg-green-600 px-5 py-3 text-sm font-bold text-white hover:bg-green-700"
               >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-lg font-black text-white">
-                  {step.number}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{step.text}</p>
-                </div>
-              </div>
-            ))}
+                Join as Passenger
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm"
+            >
+              <h3 className="text-2xl font-black text-gray-900">Driver</h3>
+              <p className="mt-4 text-sm leading-7 text-gray-600">
+                Accept trips, manage ride progress, track earnings, update profile details, and control online status.
+              </p>
+              <Link
+                href="/register"
+                className="mt-6 inline-flex rounded-2xl bg-green-600 px-5 py-3 text-sm font-bold text-white hover:bg-green-700"
+              >
+                Join as Driver
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45 }}
+              className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm"
+            >
+              <h3 className="text-2xl font-black text-gray-900">Admin</h3>
+              <p className="mt-4 text-sm leading-7 text-gray-600">
+                Oversee users, drivers, rides, and support issues with a more structured and centralized dashboard.
+              </p>
+              <Link
+                href="/login"
+                className="mt-6 inline-flex rounded-2xl border border-green-100 bg-green-50 px-5 py-3 text-sm font-bold text-green-700 hover:bg-green-100"
+              >
+                Admin Access
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="pb-16 lg:pb-24">
-        <div className="oride-container">
-          <div className="oride-glass rounded-[2rem] px-6 py-10 text-center lg:px-12">
-            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-              <Link
-                href="/register"
-                className="oride-btn-primary rounded-2xl px-6 py-4 font-bold"
-              >
-                Create Account
-              </Link>
-              <Link
-                href="/login"
-                className="oride-btn-secondary rounded-2xl px-6 py-4 font-bold"
-              >
-                Open Login
-              </Link>
+      <section className="px-4 pb-16 pt-6 md:pb-24">
+        <div className="mx-auto w-full max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[2.3rem] border border-green-100 bg-green-600 p-8 text-white shadow-sm md:p-12"
+          >
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-100">
+                  Ready to begin?
+                </p>
+                <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
+                  Start using ORIDE today.
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-8 text-green-50">
+                  Create an account, access your dashboard, and experience a more polished
+                  ride booking and management workflow.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="/register"
+                  className="rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-green-700 transition hover:bg-green-50"
+                >
+                  Create Account
+                </Link>
+
+                <Link
+                  href="/login"
+                  className="rounded-2xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                >
+                  Login
+                </Link>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </main>
