@@ -9,7 +9,7 @@ import PageTransition from "@/components/ui/PageTransition";
 import AnimatedCard from "@/components/ui/AnimatedCard";
 
 export default function DriverAvailableRidesPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [rides, setRides] = useState<any[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -41,7 +41,10 @@ export default function DriverAvailableRidesPage() {
   }, [token]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     const socket = getSocket();
+    socket.emit("joinDriverRoom", user.id);
 
     const handleNewRide = async () => {
       try {
@@ -70,7 +73,7 @@ export default function DriverAvailableRidesPage() {
       socket.off("ride:removed", handleRideRemoved);
       socket.off("ride:statusChanged", handleRideRemoved);
     };
-  }, [isOnline, token]);
+  }, [isOnline, user, token]);
 
   const handleAccept = async (rideId: number | string) => {
     setMessage("");
@@ -97,20 +100,12 @@ export default function DriverAvailableRidesPage() {
 
             <span
               className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
-                isOnline
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-600"
+                isOnline ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
               }`}
             >
               {isOnline ? "Online" : "Offline"}
             </span>
           </div>
-
-          <p className="mt-2 text-sm text-gray-500">
-            {isOnline
-              ? "You are online and will receive ride requests instantly."
-              : "Go online from your profile page to receive rides."}
-          </p>
         </AnimatedCard>
 
         {message ? <p className="text-green-700">{message}</p> : null}
@@ -119,7 +114,7 @@ export default function DriverAvailableRidesPage() {
         <section className="grid gap-4">
           {!isOnline ? (
             <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm text-gray-600">
-              You are offline. Turn on <span className="font-semibold text-gray-900">Go Online</span> from your profile to receive ride requests.
+              You are offline. Turn on <span className="font-semibold text-gray-900">Go Online</span> from your profile page to receive rides.
             </AnimatedCard>
           ) : rides.length ? (
             rides.map((ride) => (

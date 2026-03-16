@@ -13,5 +13,7 @@ router.get("/:id", authMiddleware, rideController.getRideById);
 
 router.patch("/:id/accept", authMiddleware, rideController.acceptRide);
 router.patch("/:id/status", authMiddleware, rideController.updateRideStatus);
+router.patch("/:id/cancel", authMiddleware, rideController.cancelRide);
+
 
 module.exports = router;

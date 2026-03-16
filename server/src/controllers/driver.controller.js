@@ -56,6 +56,11 @@ exports.getDashboard = async (req, res) => {
       .filter((r) => r.status === "completed")
       .reduce((sum, ride) => sum + Number(ride.price || 0), 0);
 
+    const activeRide =
+      rides.find((r) => r.status === "ongoing") ||
+      rides.find((r) => r.status === "accepted") ||
+      null;
+
     return res.status(200).json({
       stats: {
         total_trips: rides.length,
@@ -73,11 +78,13 @@ exports.getDashboard = async (req, res) => {
         },
       notifications: notificationsResult.rows || [],
       recentRides: rides.slice(0, 5),
+      activeRide,
     });
   } catch (error) {
     console.error("DRIVER DASHBOARD ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching driver dashboard",
+      error: error.message,
     });
   }
 };
@@ -122,6 +129,7 @@ exports.getAvailableRides = async (req, res) => {
     console.error("GET AVAILABLE RIDES ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching available rides",
+      error: error.message,
     });
   }
 };
@@ -195,9 +203,9 @@ exports.acceptRide = async (req, res) => {
 
     const io = getIO();
 
-io.to(`passenger:${ride.passenger_id}`).emit("ride:accepted", { ride });
-io.to(`driver:${userId}`).emit("ride:accepted", { ride });
-io.to("drivers:lobby").emit("ride:removed", { rideId: ride.id });
+    io.to(`passenger:${ride.passenger_id}`).emit("ride:accepted", { ride });
+    io.to(`driver:${userId}`).emit("ride:accepted", { ride });
+    io.to("drivers:lobby").emit("ride:removed", { rideId: ride.id });
 
     return res.status(200).json({
       message: "Ride accepted successfully",
@@ -207,6 +215,7 @@ io.to("drivers:lobby").emit("ride:removed", { rideId: ride.id });
     console.error("ACCEPT DRIVER RIDE ERROR:", error);
     return res.status(500).json({
       message: "Server error while accepting ride",
+      error: error.message,
     });
   }
 };
@@ -233,6 +242,7 @@ exports.getMyTrips = async (req, res) => {
     console.error("GET DRIVER TRIPS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching driver trips",
+      error: error.message,
     });
   }
 };
@@ -269,6 +279,7 @@ exports.getTripById = async (req, res) => {
     console.error("GET DRIVER TRIP BY ID ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching trip details",
+      error: error.message,
     });
   }
 };
@@ -481,15 +492,22 @@ exports.updateRideStatus = async (req, res) => {
 
     const io = getIO();
 
-io.to(`passenger:${updatedRide.passenger_id}`).emit("ride:statusChanged", {
-  ride: updatedRide,
-});
-io.to(`driver:${userId}`).emit("ride:statusChanged", {
-  ride: updatedRide,
-});
-io.to("drivers:lobby").emit("ride:statusChanged", {
-  ride: updatedRide,
-});
+    io.to(`passenger:${updatedRide.passenger_id}`).emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    io.to(`driver:${userId}`).emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    io.to("drivers:lobby").emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    return res.status(200).json({
+      message: "Ride status updated successfully",
+      ride: updatedRide,
+    });
   } catch (error) {
     console.error("UPDATE DRIVER RIDE STATUS ERROR:", error);
     return res.status(500).json({
@@ -531,6 +549,7 @@ exports.getWallet = async (req, res) => {
     console.error("GET DRIVER WALLET ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching driver wallet",
+      error: error.message,
     });
   }
 };
@@ -609,6 +628,7 @@ exports.withdrawWallet = async (req, res) => {
     console.error("WITHDRAW DRIVER WALLET ERROR:", error);
     return res.status(500).json({
       message: "Server error while withdrawing funds",
+      error: error.message,
     });
   }
 };
@@ -634,6 +654,7 @@ exports.getNotifications = async (req, res) => {
     console.error("GET DRIVER NOTIFICATIONS ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching notifications",
+      error: error.message,
     });
   }
 };
@@ -644,27 +665,35 @@ exports.getProfile = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT vehicle_model, plate_number, vehicle_color, is_online
-      FROM driver_profiles
-      WHERE user_id = $1
+      SELECT
+        u.id,
+        u.name,
+        u.email,
+        u.phone,
+        dp.vehicle_model,
+        dp.plate_number,
+        dp.vehicle_color,
+        dp.is_online
+      FROM users u
+      LEFT JOIN driver_profiles dp ON u.id = dp.user_id
+      WHERE u.id = $1
       LIMIT 1
       `,
       [userId]
     );
 
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Driver profile not found" });
+    }
+
     return res.status(200).json({
-      profile:
-        result.rows[0] || {
-          vehicle_model: "",
-          plate_number: "",
-          vehicle_color: "",
-          is_online: false,
-        },
+      profile: result.rows[0],
     });
   } catch (error) {
     console.error("GET DRIVER PROFILE ERROR:", error);
     return res.status(500).json({
-      message: "Server error while fetching driver profile",
+      message: "Server error while fetching profile",
+      error: error.message,
     });
   }
 };
@@ -672,59 +701,50 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = Number(req.user.id);
-    const { vehicle_model, plate_number, vehicle_color, is_online } = req.body;
+    const {
+      vehicle_model,
+      plate_number,
+      vehicle_color,
+      is_online,
+    } = req.body;
 
-    const existing = await pool.query(
+    const result = await pool.query(
       `
-      SELECT id
-      FROM driver_profiles
-      WHERE user_id = $1
-      LIMIT 1
+      INSERT INTO driver_profiles (
+        user_id,
+        vehicle_model,
+        plate_number,
+        vehicle_color,
+        is_online
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (user_id)
+      DO UPDATE SET
+        vehicle_model = EXCLUDED.vehicle_model,
+        plate_number = EXCLUDED.plate_number,
+        vehicle_color = EXCLUDED.vehicle_color,
+        is_online = EXCLUDED.is_online,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *
       `,
-      [userId]
+      [
+        userId,
+        vehicle_model || "",
+        plate_number || "",
+        vehicle_color || "",
+        !!is_online,
+      ]
     );
 
-    if (existing.rows.length === 0) {
-      await pool.query(
-        `
-        INSERT INTO driver_profiles (user_id, vehicle_model, plate_number, vehicle_color, is_online)
-        VALUES ($1, $2, $3, $4, $5)
-        `,
-        [
-          userId,
-          vehicle_model || "",
-          plate_number || "",
-          vehicle_color || "",
-          !!is_online,
-        ]
-      );
-    } else {
-      await pool.query(
-        `
-        UPDATE driver_profiles
-        SET vehicle_model = $1,
-            plate_number = $2,
-            vehicle_color = $3,
-            is_online = $4
-        WHERE user_id = $5
-        `,
-        [
-          vehicle_model || "",
-          plate_number || "",
-          vehicle_color || "",
-          !!is_online,
-          userId,
-        ]
-      );
-    }
-
     return res.status(200).json({
-      message: "Driver profile updated successfully",
+      message: "Profile updated successfully",
+      profile: result.rows[0],
     });
   } catch (error) {
     console.error("UPDATE DRIVER PROFILE ERROR:", error);
     return res.status(500).json({
-      message: "Server error while updating driver profile",
+      message: "Server error while updating profile",
+      error: error.message,
     });
   }
 };

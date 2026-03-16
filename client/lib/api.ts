@@ -65,26 +65,42 @@ export const authApi = {
       method: "GET",
       token,
     }),
+
+    forgotPassword: (payload: { email: string }) =>
+    apiRequest("/api/auth/forgot-password", {
+      method: "POST",
+      body: payload,
+    }),
+
+  resetPassword: (payload: { token: string; password: string }) =>
+    apiRequest("/api/auth/reset-password", {
+      method: "POST",
+      body: payload,
+    }),
 };
 
 export const rideApi = {
   requestRide: (
-    payload: {
-      passenger_id: number | string;
-      pickup: string;
-      destination?: string;
-      dropoff?: string;
-      ride_type: string;
-      payment_method: string;
-      note?: string;
-    },
-    token?: string | null
-  ) =>
-    apiRequest("/api/rides/request", {
-      method: "POST",
-      body: payload,
-      token,
-    }),
+  payload: {
+    passenger_id: number | string;
+    pickup: string;
+    destination?: string;
+    dropoff?: string;
+    pickup_lat?: number;
+    pickup_lng?: number;
+    dropoff_lat?: number;
+    dropoff_lng?: number;
+    ride_type: string;
+    payment_method: string;
+    note?: string;
+  },
+  token?: string | null
+) =>
+  apiRequest("/api/rides/request", {
+    method: "POST",
+    body: payload,
+    token,
+  }),
 
   getPassengerRides: (
     passengerId: number | string,

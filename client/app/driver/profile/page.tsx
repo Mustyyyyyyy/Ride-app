@@ -6,9 +6,10 @@ import useAuth from "@/hooks/useAuth";
 import PageTransition from "@/components/ui/PageTransition";
 import AnimatedCard from "@/components/ui/AnimatedCard";
 import AnimatedButton from "@/components/ui/AnimatedButton";
+import { getSocket } from "@/lib/socket";
 
 export default function DriverProfilePage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [vehicleModel, setVehicleModel] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
@@ -34,6 +35,19 @@ export default function DriverProfilePage() {
 
     loadProfile();
   }, [token]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const socket = getSocket();
+    socket.emit("joinDriverRoom", user.id);
+
+    if (isOnline) {
+      socket.emit("joinDriversLobby");
+    } else {
+      socket.emit("leaveDriversLobby");
+    }
+  }, [isOnline, user]);
 
   const handleSave = async () => {
     setMessage("");
@@ -86,14 +100,28 @@ export default function DriverProfilePage() {
               className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
             />
 
-            <label className="flex items-center gap-3 text-gray-700">
-              <input
-                type="checkbox"
-                checked={isOnline}
-                onChange={(e) => setIsOnline(e.target.checked)}
-              />
-              Go Online
-            </label>
+            <div className="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4">
+              <div>
+                <p className="font-bold text-gray-900">Driver Availability</p>
+                <p className="text-sm text-gray-500">
+                  {isOnline ? "You can receive live ride requests" : "You are currently offline"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsOnline((prev) => !prev)}
+                className={`relative inline-flex h-10 w-20 items-center rounded-full transition ${
+                  isOnline ? "bg-green-600" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-8 w-8 transform rounded-full bg-white transition ${
+                    isOnline ? "translate-x-11" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
 
             <AnimatedButton
               onClick={handleSave}

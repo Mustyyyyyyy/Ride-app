@@ -32,42 +32,43 @@ export default function PassengerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  async function fetchDashboard() {
+    if (!hydrated || !token) return;
+
+    try {
+      setLoading(true);
+      setError("");
+      const result = await passengerApi.getDashboard(token);
+      setData(result);
+    } catch (err: any) {
+      setError(err.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    async function fetchDashboard() {
-      if (!hydrated || !token) return;
-
-      try {
-        setLoading(true);
-        setError("");
-        const result = await passengerApi.getDashboard(token);
-        setData(result);
-      } catch (err: any) {
-        setError(err.message || "Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchDashboard();
+  }, [hydrated, token]);
 
-    if (user?.id) {
-      const socket = getSocket();
+  useEffect(() => {
+    if (!user?.id) return;
 
-      socket.emit("joinPassengerRoom", user.id);
+    const socket = getSocket();
+    socket.emit("joinPassengerRoom", user.id);
 
-      const refresh = () => {
-        fetchDashboard();
-      };
+    const refresh = async () => {
+      await fetchDashboard();
+    };
 
-      socket.on("ride:accepted", refresh);
-      socket.on("ride:statusChanged", refresh);
+    socket.on("ride:accepted", refresh);
+    socket.on("ride:statusChanged", refresh);
 
-      return () => {
-        socket.off("ride:accepted", refresh);
-        socket.off("ride:statusChanged", refresh);
-      };
-    }
-  }, [token, user, hydrated]);
+    return () => {
+      socket.off("ride:accepted", refresh);
+      socket.off("ride:statusChanged", refresh);
+    };
+  }, [user?.id, hydrated, token]);
 
   if (!hydrated || loading) {
     return <main className="text-gray-900">Loading dashboard...</main>;

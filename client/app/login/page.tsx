@@ -150,12 +150,12 @@ export default function LoginPage() {
                     Password
                   </label>
 
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-green-700 transition hover:text-green-800"
-                  >
-                    Forgot password?
-                  </button>
+                  <Link
+  href="/forgot-password"
+  className="text-sm font-semibold text-green-700 transition hover:text-green-800"
+>
+  Forgot password?
+</Link>
                 </div>
 
                 <input

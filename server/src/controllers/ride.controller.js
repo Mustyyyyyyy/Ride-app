@@ -11,6 +11,10 @@ exports.requestRide = async (req, res) => {
       ride_type,
       payment_method,
       note,
+      pickup_lat,
+      pickup_lng,
+      dropoff_lat,
+      dropoff_lng,
     } = req.body;
 
     const finalDropoff = (dropoff || destination || "").trim();
@@ -45,7 +49,9 @@ exports.requestRide = async (req, res) => {
       Math.max(pickup.trim().length, finalDropoff.length) +
       Math.abs(pickup.trim().length - finalDropoff.length);
 
-    const estimatedFare = Math.round((700 + textDistanceFactor * 25) * typeMultiplier);
+    const estimatedFare = Math.round(
+      (700 + textDistanceFactor * 25) * typeMultiplier
+    );
 
     if ((payment_method || "wallet") === "wallet") {
       const walletResult = await pool.query(
@@ -78,10 +84,18 @@ exports.requestRide = async (req, res) => {
         note,
         status,
         price,
+        pickup_lat,
+        pickup_lng,
+        dropoff_lat,
+        dropoff_lng,
         created_at,
         updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8,
+        $9, $10, $11, $12,
+        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )
       RETURNING *
       `,
       [
@@ -93,12 +107,16 @@ exports.requestRide = async (req, res) => {
         note ? note.trim() : null,
         "pending",
         estimatedFare,
+        pickup_lat ?? null,
+        pickup_lng ?? null,
+        dropoff_lat ?? null,
+        dropoff_lng ?? null,
       ]
     );
 
     const ride = rideResult.rows[0];
-
     const io = getIO();
+
     io.to("drivers:lobby").emit("ride:new", { ride });
 
     return res.status(201).json({
@@ -113,7 +131,6 @@ exports.requestRide = async (req, res) => {
     });
   }
 };
-
 
 exports.getPassengerRides = async (req, res) => {
   try {
@@ -164,9 +181,19 @@ exports.getRideById = async (req, res) => {
         r.created_at,
         r.payment_method,
         r.note,
-        u.name AS driver_name
+        r.pickup_lat,
+        r.pickup_lng,
+        r.dropoff_lat,
+        r.dropoff_lng,
+        u.name AS driver_name,
+        u.phone AS driver_phone,
+        u.photo AS driver_photo,
+        dp.vehicle_model,
+        dp.vehicle_color,
+        dp.plate_number
       FROM rides r
       LEFT JOIN users u ON r.driver_id = u.id
+      LEFT JOIN driver_profiles dp ON dp.user_id = u.id
       WHERE r.id = $1
       LIMIT 1
       `,
@@ -186,6 +213,105 @@ exports.getRideById = async (req, res) => {
     console.error("GET RIDE BY ID ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching ride",
+      error: error.message,
+    });
+  }
+};
+
+exports.cancelRide = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const passengerId = Number(req.user.id);
+
+    const existingRide = await pool.query(
+      `
+      SELECT *
+      FROM rides
+      WHERE id = $1 AND passenger_id = $2
+      LIMIT 1
+      `,
+      [Number(id), passengerId]
+    );
+
+    if (existingRide.rows.length === 0) {
+      return res.status(404).json({
+        message: "Ride not found",
+      });
+    }
+
+    const ride = existingRide.rows[0];
+
+    if (!["pending", "accepted"].includes(ride.status)) {
+      return res.status(400).json({
+        message: "Only pending or accepted rides can be cancelled",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE rides
+      SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *
+      `,
+      [Number(id)]
+    );
+
+    const updatedRide = result.rows[0];
+
+    await pool.query(
+      `
+      INSERT INTO notifications (user_id, title, message, type)
+      VALUES ($1, $2, $3, $4)
+      `,
+      [
+        passengerId,
+        "Ride cancelled",
+        `You cancelled ride #${updatedRide.id}.`,
+        "ride",
+      ]
+    );
+
+    if (updatedRide.driver_id) {
+      await pool.query(
+        `
+        INSERT INTO notifications (user_id, title, message, type)
+        VALUES ($1, $2, $3, $4)
+        `,
+        [
+          updatedRide.driver_id,
+          "Ride cancelled",
+          `Passenger cancelled ride #${updatedRide.id}.`,
+          "ride",
+        ]
+      );
+    }
+
+    const io = getIO();
+
+    io.to(`passenger:${updatedRide.passenger_id}`).emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    if (updatedRide.driver_id) {
+      io.to(`driver:${updatedRide.driver_id}`).emit("ride:statusChanged", {
+        ride: updatedRide,
+      });
+    }
+
+    io.to("drivers:lobby").emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    return res.status(200).json({
+      message: "Ride cancelled successfully",
+      ride: updatedRide,
+    });
+  } catch (error) {
+    console.error("CANCEL RIDE ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while cancelling ride",
+      error: error.message,
     });
   }
 };
@@ -230,6 +356,7 @@ exports.getAvailableRides = async (req, res) => {
     console.error("GET AVAILABLE RIDES ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching available rides",
+      error: error.message,
     });
   }
 };
@@ -320,6 +447,7 @@ exports.acceptRide = async (req, res) => {
     console.error("ACCEPT RIDE ERROR:", error);
     return res.status(500).json({
       message: "Server error while accepting ride",
+      error: error.message,
     });
   }
 };
@@ -368,9 +496,11 @@ exports.updateRideStatus = async (req, res) => {
       ride,
     });
 
-    io.to(`driver:${ride.driver_id}`).emit("ride:statusChanged", {
-      ride,
-    });
+    if (ride.driver_id) {
+      io.to(`driver:${ride.driver_id}`).emit("ride:statusChanged", {
+        ride,
+      });
+    }
 
     return res.status(200).json({
       message: "Ride status updated successfully",
@@ -380,6 +510,7 @@ exports.updateRideStatus = async (req, res) => {
     console.error("UPDATE RIDE STATUS ERROR:", error);
     return res.status(500).json({
       message: "Server error while updating ride status",
+      error: error.message,
     });
   }
 };
@@ -408,6 +539,7 @@ exports.getDriverRides = async (req, res) => {
     console.error("GET DRIVER RIDES ERROR:", error);
     return res.status(500).json({
       message: "Server error while fetching driver rides",
+      error: error.message,
     });
   }
 };
