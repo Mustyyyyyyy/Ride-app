@@ -6,6 +6,7 @@ import useAuth from "@/hooks/useAuth";
 import DriverTripActions from "@/components/driver/DriverTripActions";
 import PageTransition from "@/components/ui/PageTransition";
 import AnimatedCard from "@/components/ui/AnimatedCard";
+import RideLiveMap from "@/components/maps/RideLiveMap";
 
 type Props = {
   params: {

@@ -24,7 +24,7 @@ const rides = [
 
 export default function RideHistory() {
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl shadow-black/20">
+    <section className="rounded-[2rem] border border-white/10 bg-white p-6 shadow-2xl shadow-black/20">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-300">

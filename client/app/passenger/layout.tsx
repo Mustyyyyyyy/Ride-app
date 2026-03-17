@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PassengerSidebar from "@/components/layout/PassengerSidebar";
+import ResponsiveDashboardShell from "@/components/layout/ResponsiveDashboardShell";
 
 type StoredUser = {
   id?: number | string;
@@ -65,16 +66,14 @@ export default function PassengerLayout({
     );
   }
 
-  if (!allowed) {
-    return null;
-  }
+  if (!allowed) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-green-50 to-white text-gray-900">
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr] lg:px-6">
-        <PassengerSidebar />
-        <div>{children}</div>
-      </div>
-    </div>
+    <ResponsiveDashboardShell
+      title="Passenger"
+      sidebar={<PassengerSidebar />}
+    >
+      {children}
+    </ResponsiveDashboardShell>
   );
 }

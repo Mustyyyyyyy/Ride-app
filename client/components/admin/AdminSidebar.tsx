@@ -16,7 +16,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-full rounded-[2rem] border border-green-100 bg-white p-5 shadow-sm lg:w-72">
+    <aside className="w-full rounded-[2rem] border border-green-100 bg-white p-5 shadow-sm">
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-green-600 text-lg font-black text-white">
