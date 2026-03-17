@@ -263,3 +263,38 @@ exports.updateSupportTicketStatus = async (req, res) => {
     });
   }
 };
+
+exports.deleteDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await pool.query(
+      "SELECT id, role FROM users WHERE id = $1 LIMIT 1",
+      [Number(id)]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({
+        message: "Driver not found",
+      });
+    }
+
+    if (existing.rows[0].role !== "driver") {
+      return res.status(400).json({
+        message: "Selected user is not a driver",
+      });
+    }
+
+    await pool.query("DELETE FROM users WHERE id = $1", [Number(id)]);
+
+    return res.status(200).json({
+      message: "Driver deleted successfully",
+    });
+  } catch (error) {
+    console.error("DELETE DRIVER ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while deleting driver",
+      error: error.message,
+    });
+  }
+};

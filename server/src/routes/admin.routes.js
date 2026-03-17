@@ -9,42 +9,49 @@ router.get(
   "/dashboard",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.getDashboard
+  adminController.getDashboard,
 );
 
 router.get(
   "/users",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.getUsers
+  adminController.getUsers,
 );
 
 router.get(
   "/drivers",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.getDrivers
+  adminController.getDrivers,
 );
 
 router.get(
   "/rides",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.getRides
+  adminController.getRides,
 );
 
 router.get(
   "/support",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.getSupportTickets
+  adminController.getSupportTickets,
 );
 
 router.patch(
   "/support/:id",
   authMiddleware,
   roleMiddleware("admin"),
-  adminController.updateSupportTicketStatus
+  adminController.updateSupportTicketStatus,
+);
+
+router.delete(
+  "/drivers/:id",
+  authMiddleware,
+  roleMiddleware("admin"),
+  adminController.deleteDriver,
 );
 
 module.exports = router;

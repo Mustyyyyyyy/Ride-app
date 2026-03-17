@@ -348,4 +348,10 @@ export const adminApi = {
       body: payload,
       token,
     }),
+
+    deleteDriver: (driverId: number | string, token?: string | null) =>
+  apiRequest(`/api/admin/drivers/${driverId}`, {
+    method: "DELETE",
+    token,
+  }),
 };
