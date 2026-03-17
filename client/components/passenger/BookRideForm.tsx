@@ -24,10 +24,12 @@ export default function BookRideForm() {
   const [loading, setLoading] = useState(false);
 
   async function geocode(place: string) {
+    const searchText = `${place}, Ogbomoso, Oyo State, Nigeria`;
+
     const res = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-        place
-      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+        searchText
+      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=ng&limit=1`
     );
 
     const data = await res.json();
@@ -35,9 +37,16 @@ export default function BookRideForm() {
 
     if (!first) return null;
 
+    const placeName = (first.place_name || "").toLowerCase();
+
+    if (!placeName.includes("ogbomoso")) {
+      return null;
+    }
+
     return {
       lat: first.center[1],
       lng: first.center[0],
+      place_name: first.place_name,
     };
   }
 
@@ -64,8 +73,9 @@ export default function BookRideForm() {
       const dropoffLocation = await geocode(destination);
 
       if (!pickupLocation || !dropoffLocation) {
-        setError("Unable to find those locations.");
-        setLoading(false);
+        setError(
+          "Only Ogbomoso locations are allowed or the place could not be found."
+        );
         return;
       }
 
@@ -77,13 +87,10 @@ export default function BookRideForm() {
           passenger_id: Number(user.id),
           pickup: pickup.trim(),
           dropoff: destination.trim(),
-
           pickup_lat: pickupLocation.lat,
           pickup_lng: pickupLocation.lng,
-
           dropoff_lat: dropoffLocation.lat,
           dropoff_lng: dropoffLocation.lng,
-
           ride_type: rideType,
           payment_method: paymentMethod,
           note: note.trim(),
@@ -98,6 +105,8 @@ export default function BookRideForm() {
       setNote("");
       setRideType("standard");
       setPaymentMethod("wallet");
+      setPickupCoords(null);
+      setDropoffCoords(null);
     } catch (err: any) {
       setError(err.message || "Failed to create ride request.");
     } finally {
@@ -114,6 +123,9 @@ export default function BookRideForm() {
         <h2 className="mt-2 text-2xl font-black text-gray-900">
           Request a Ride
         </h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Enter pickup and destination within Ogbomoso.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -125,7 +137,7 @@ export default function BookRideForm() {
           <input
             value={pickup}
             onChange={(e) => setPickup(e.target.value)}
-            placeholder="Enter pickup point"
+            placeholder="Enter pickup point in Ogbomoso"
             className="w-full rounded-2xl border border-green-100 px-4 py-3 focus:border-green-500"
           />
         </div>
@@ -138,7 +150,7 @@ export default function BookRideForm() {
           <input
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
-            placeholder="Enter destination"
+            placeholder="Enter destination in Ogbomoso"
             className="w-full rounded-2xl border border-green-100 px-4 py-3 focus:border-green-500"
           />
         </div>
@@ -185,10 +197,17 @@ export default function BookRideForm() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={4}
-            placeholder="Any pickup instruction?"
+            placeholder="Any pickup instruction in Ogbomoso?"
             className="w-full rounded-2xl border border-green-100 px-4 py-3"
           />
         </div>
+
+        {pickupCoords || dropoffCoords ? (
+          <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {pickupCoords ? "Pickup found in Ogbomoso. " : ""}
+            {dropoffCoords ? "Destination found in Ogbomoso." : ""}
+          </div>
+        ) : null}
 
         {message && (
           <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">

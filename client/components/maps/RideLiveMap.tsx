@@ -15,6 +15,16 @@ type Props = {
   dropoff: Point;
 };
 
+const OGBOMOSO_CENTER = {
+  lng: 4.2668,
+  lat: 8.1337,
+};
+
+const OGBOMOSO_BOUNDS: [[number, number], [number, number]] = [
+  [4.15, 8.05],
+  [4.35, 8.22],
+];
+
 export default function RideLiveMap({ rideId, pickup, dropoff }: Props) {
   const mapRef = useRef<any>(null);
   const animationRef = useRef<number | null>(null);
@@ -71,7 +81,6 @@ export default function RideLiveMap({ rideId, pickup, dropoff }: Props) {
 
     const animate = (time: number) => {
       const progress = Math.min((time - startTime) / duration, 1);
-
       const eased = 1 - Math.pow(1 - progress, 3);
 
       const lat = start.lat + (end.lat - start.lat) * eased;
@@ -131,10 +140,11 @@ export default function RideLiveMap({ rideId, pickup, dropoff }: Props) {
       <Map
         ref={mapRef}
         initialViewState={{
-          longitude: pickup.lng,
-          latitude: pickup.lat,
+          longitude: pickup?.lng || OGBOMOSO_CENTER.lng,
+          latitude: pickup?.lat || OGBOMOSO_CENTER.lat,
           zoom: 13,
         }}
+        maxBounds={OGBOMOSO_BOUNDS}
         style={{ width: "100%", height: 420 }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
