@@ -213,7 +213,7 @@ exports.forgotPassword = async (req, res) => {
       [resetToken, resetExpires, user.id]
     );
 
-    const resetLink = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     await sendEmail({
       to: user.email,
@@ -287,4 +287,4 @@ exports.resetPassword = async (req, res) => {
       message: "Server error while resetting password",
     });
   }
-};
+}; 
