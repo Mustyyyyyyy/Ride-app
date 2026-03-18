@@ -13,26 +13,56 @@ type Suggestion = {
   lng: number;
 };
 
+type SavedPlace = {
+  place_name: string;
+  lat: number;
+  lng: number;
+};
+
+const POPULAR_OGBOMOSO_PLACES: Suggestion[] = [
+  {
+    id: "lautech",
+    place_name: "LAUTECH, Ogbomoso, Oyo State, Nigeria",
+    lat: 8.1667,
+    lng: 4.2667,
+  },
+  {
+    id: "takie",
+    place_name: "Takie, Ogbomoso, Oyo State, Nigeria",
+    lat: 8.133,
+    lng: 4.255,
+  },
+  {
+    id: "under-g",
+    place_name: "Under G, Ogbomoso, Oyo State, Nigeria",
+    lat: 8.128,
+    lng: 4.261,
+  },
+  {
+    id: "oja-igbo",
+    place_name: "Oja Igbo, Ogbomoso, Oyo State, Nigeria",
+    lat: 8.132,
+    lng: 4.248,
+  },
+];
+
+const RECENT_PICKUP_KEY = "oride_recent_pickups";
+const RECENT_DROPOFF_KEY = "oride_recent_dropoffs";
+
 export default function BookRideForm() {
   const { user, token } = useAuth();
 
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
 
-  const [pickupCoords, setPickupCoords] = useState<{
-    lat: number;
-    lng: number;
-    place_name?: string;
-  } | null>(null);
-
-  const [dropoffCoords, setDropoffCoords] = useState<{
-    lat: number;
-    lng: number;
-    place_name?: string;
-  } | null>(null);
+  const [pickupCoords, setPickupCoords] = useState<SavedPlace | null>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<SavedPlace | null>(null);
 
   const [pickupSuggestions, setPickupSuggestions] = useState<Suggestion[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<Suggestion[]>([]);
+
+  const [recentPickups, setRecentPickups] = useState<SavedPlace[]>([]);
+  const [recentDropoffs, setRecentDropoffs] = useState<SavedPlace[]>([]);
 
   const [showPickupSuggestions, setShowPickupSuggestions] = useState(false);
   const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false);
@@ -44,19 +74,52 @@ export default function BookRideForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   const pickupRef = useRef<HTMLDivElement | null>(null);
   const destinationRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    try {
+      const storedPickups = localStorage.getItem(RECENT_PICKUP_KEY);
+      const storedDropoffs = localStorage.getItem(RECENT_DROPOFF_KEY);
+
+      setRecentPickups(storedPickups ? JSON.parse(storedPickups) : []);
+      setRecentDropoffs(storedDropoffs ? JSON.parse(storedDropoffs) : []);
+    } catch {
+      setRecentPickups([]);
+      setRecentDropoffs([]);
+    }
+  }, []);
+
+  function saveRecentPlace(key: string, place: SavedPlace) {
+    try {
+      const existingRaw = localStorage.getItem(key);
+      const existing: SavedPlace[] = existingRaw ? JSON.parse(existingRaw) : [];
+
+      const filtered = existing.filter(
+        (item) => item.place_name !== place.place_name
+      );
+
+      const updated = [place, ...filtered].slice(0, 5);
+      localStorage.setItem(key, JSON.stringify(updated));
+
+      if (key === RECENT_PICKUP_KEY) setRecentPickups(updated);
+      if (key === RECENT_DROPOFF_KEY) setRecentDropoffs(updated);
+    } catch {}
+  }
+
   async function searchPlaces(query: string): Promise<Suggestion[]> {
     if (!query.trim()) return [];
 
-    const searchText = `${query}, Ogbomoso, Oyo State, Nigeria`;
+    const searchText = query.toLowerCase().includes("ogbomoso")
+      ? query
+      : `${query}, Ogbomoso, Oyo State, Nigeria`;
 
     const res = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
         searchText
-      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=ng&limit=5`
+      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=ng&limit=8`
     );
 
     const data = await res.json();
@@ -75,8 +138,45 @@ export default function BookRideForm() {
   }
 
   async function geocodeExact(place: string) {
-    const results = await searchPlaces(place);
-    return results[0] || null;
+    const searchText = place.toLowerCase().includes("ogbomoso")
+      ? place
+      : `${place}, Ogbomoso, Oyo State, Nigeria`;
+
+    const res = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        searchText
+      )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=ng&limit=8`
+    );
+
+    const data = await res.json();
+    const first = data?.features?.[0];
+
+    if (!first) return null;
+
+    const placeName = (first.place_name || "").toLowerCase();
+    if (!placeName.includes("ogbomoso")) return null;
+
+    return {
+      lat: first.center[1],
+      lng: first.center[0],
+      place_name: first.place_name,
+    };
+  }
+
+  async function reverseGeocode(lat: number, lng: number) {
+    const res = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&country=ng&limit=1`
+    );
+
+    const data = await res.json();
+    const first = data?.features?.[0];
+
+    return {
+      lat,
+      lng,
+      place_name:
+        first?.place_name || "Current location, Ogbomoso, Oyo State, Nigeria",
+    };
   }
 
   useEffect(() => {
@@ -88,7 +188,7 @@ export default function BookRideForm() {
 
       const results = await searchPlaces(pickup);
       setPickupSuggestions(results);
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [pickup]);
@@ -102,7 +202,7 @@ export default function BookRideForm() {
 
       const results = await searchPlaces(destination);
       setDestinationSuggestions(results);
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
   }, [destination]);
@@ -124,7 +224,7 @@ export default function BookRideForm() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelectPickup = (item: Suggestion) => {
+  const handleSelectPickup = (item: Suggestion | SavedPlace) => {
     setPickup(item.place_name);
     setPickupCoords({
       lat: item.lat,
@@ -135,7 +235,7 @@ export default function BookRideForm() {
     setShowPickupSuggestions(false);
   };
 
-  const handleSelectDestination = (item: Suggestion) => {
+  const handleSelectDestination = (item: Suggestion | SavedPlace) => {
     setDestination(item.place_name);
     setDropoffCoords({
       lat: item.lat,
@@ -144,6 +244,42 @@ export default function BookRideForm() {
     });
     setDestinationSuggestions([]);
     setShowDestinationSuggestions(false);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported on this device.");
+      return;
+    }
+
+    setDetectingLocation(true);
+    setError("");
+    setMessage("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          const resolved = await reverseGeocode(lat, lng);
+          handleSelectPickup(resolved);
+        } catch {
+          setError("Unable to detect your current location.");
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      () => {
+        setError("Unable to access your location.");
+        setDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -169,36 +305,22 @@ export default function BookRideForm() {
       let dropoffLocation = dropoffCoords;
 
       if (!pickupLocation) {
-        const foundPickup = await geocodeExact(pickup);
-        if (foundPickup) {
-          pickupLocation = {
-            lat: foundPickup.lat,
-            lng: foundPickup.lng,
-            place_name: foundPickup.place_name,
-          };
-        }
+        pickupLocation = await geocodeExact(pickup);
       }
 
       if (!dropoffLocation) {
-        const foundDropoff = await geocodeExact(destination);
-        if (foundDropoff) {
-          dropoffLocation = {
-            lat: foundDropoff.lat,
-            lng: foundDropoff.lng,
-            place_name: foundDropoff.place_name,
-          };
-        }
+        dropoffLocation = await geocodeExact(destination);
       }
 
       if (!pickupLocation || !dropoffLocation) {
         setError(
-          "Only Ogbomoso locations are allowed or the place could not be found."
+          "Select a valid Ogbomoso location from suggestions or include 'Ogbomoso' in the address."
         );
         return;
       }
 
-      setPickupCoords(pickupLocation);
-      setDropoffCoords(dropoffLocation);
+      saveRecentPlace(RECENT_PICKUP_KEY, pickupLocation);
+      saveRecentPlace(RECENT_DROPOFF_KEY, dropoffLocation);
 
       const data = await rideApi.requestRide(
         {
@@ -234,6 +356,38 @@ export default function BookRideForm() {
     }
   };
 
+  const pickupItems =
+    pickup.trim().length > 0
+      ? pickupSuggestions
+      : [
+          ...recentPickups.map((item, i) => ({
+            ...item,
+            id: `recent-pickup-${i}`,
+          })),
+          ...POPULAR_OGBOMOSO_PLACES.filter(
+            (popular) =>
+              !recentPickups.some(
+                (recent) => recent.place_name === popular.place_name
+              )
+          ),
+        ];
+
+  const destinationItems =
+    destination.trim().length > 0
+      ? destinationSuggestions
+      : [
+          ...recentDropoffs.map((item, i) => ({
+            ...item,
+            id: `recent-dropoff-${i}`,
+          })),
+          ...POPULAR_OGBOMOSO_PLACES.filter(
+            (popular) =>
+              !recentDropoffs.some(
+                (recent) => recent.place_name === popular.place_name
+              )
+          ),
+        ];
+
   return (
     <AnimatedCard className="rounded-[2rem] border border-green-100 bg-white p-6 shadow-sm">
       <div className="mb-6">
@@ -244,15 +398,25 @@ export default function BookRideForm() {
           Request a Ride
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          Enter pickup and destination within Ogbomoso.
+          Book your ride anywhere within Ogbomoso.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div ref={pickupRef} className="relative">
-          <label className="mb-2 block text-sm font-semibold text-gray-700">
-            Pickup location
-          </label>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label className="block text-sm font-semibold text-gray-700">
+              Pickup location
+            </label>
+
+            <button
+              type="button"
+              onClick={handleUseCurrentLocation}
+              className="text-xs font-bold text-green-700 hover:text-green-800"
+            >
+              {detectingLocation ? "Detecting..." : "Use current location"}
+            </button>
+          </div>
 
           <input
             value={pickup}
@@ -266,9 +430,15 @@ export default function BookRideForm() {
             className="w-full rounded-2xl border border-green-100 px-4 py-3 text-gray-900 outline-none focus:border-green-500"
           />
 
-          {showPickupSuggestions && pickupSuggestions.length > 0 && (
-            <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-green-100 bg-white shadow-lg">
-              {pickupSuggestions.map((item) => (
+          {showPickupSuggestions && pickupItems.length > 0 && (
+            <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-green-100 bg-white shadow-lg">
+              {!pickup.trim() ? (
+                <div className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-green-700">
+                  Recent & Popular Places
+                </div>
+              ) : null}
+
+              {pickupItems.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -299,9 +469,15 @@ export default function BookRideForm() {
             className="w-full rounded-2xl border border-green-100 px-4 py-3 text-gray-900 outline-none focus:border-green-500"
           />
 
-          {showDestinationSuggestions && destinationSuggestions.length > 0 && (
-            <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-green-100 bg-white shadow-lg">
-              {destinationSuggestions.map((item) => (
+          {showDestinationSuggestions && destinationItems.length > 0 && (
+            <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-green-100 bg-white shadow-lg">
+              {!destination.trim() ? (
+                <div className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-green-700">
+                  Recent & Popular Places
+                </div>
+              ) : null}
+
+              {destinationItems.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -364,8 +540,8 @@ export default function BookRideForm() {
 
         {(pickupCoords || dropoffCoords) && (
           <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {pickupCoords ? "Pickup found in Ogbomoso. " : ""}
-            {dropoffCoords ? "Destination found in Ogbomoso." : ""}
+            {pickupCoords ? "Pickup found. " : ""}
+            {dropoffCoords ? "Destination found." : ""}
           </div>
         )}
 
