@@ -252,6 +252,12 @@ exports.getTripById = async (req, res) => {
     const userId = Number(req.user.id);
     const { id } = req.params;
 
+    if (!id || Number.isNaN(Number(id))) {
+      return res.status(400).json({
+        message: "Invalid trip ID",
+      });
+    }
+
     const result = await pool.query(
       `
       SELECT
