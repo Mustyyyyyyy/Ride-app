@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/rides", label: "Rides", icon: "⇄" },
   { href: "/admin/support", label: "Support", icon: "⌕" },
   { href: "/admin/settings", label: "Settings", icon: "⚙" },
+  { href: "/login", label: "Logout", icon: "--->"}
 ];
 
 export default function AdminSidebar() {
