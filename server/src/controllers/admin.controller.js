@@ -2,57 +2,110 @@ const pool = require("../config/db");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const usersResult = await pool.query(
-      `
-      SELECT COUNT(*)::int AS total_users
-      FROM users
-      `
-    );
+    const [
+      usersResult,
+      driversResult,
+      ridesResult,
+      ticketsResult,
+      revenueTodayResult,
+      avgWaitTimeResult,
+      weeklyRevenueResult,
+      ridesByTypeResult,
+      recentUsersResult,
+      recentRidesResult,
+    ] = await Promise.all([
+      pool.query(`
+        SELECT COUNT(*)::int AS total_users
+        FROM users
+      `),
 
-    const driversResult = await pool.query(
-      `
-      SELECT COUNT(*)::int AS total_drivers
-      FROM users
-      WHERE role = 'driver'
-      `
-    );
+      pool.query(`
+        SELECT COUNT(*)::int AS total_drivers
+        FROM users
+        WHERE role = 'driver'
+      `),
 
-    const ridesResult = await pool.query(
-      `
-      SELECT COUNT(*)::int AS total_rides
-      FROM rides
-      `
-    );
+      pool.query(`
+        SELECT COUNT(*)::int AS total_rides
+        FROM rides
+      `),
 
-    const ticketsResult = await pool.query(
-      `
-      SELECT COUNT(*)::int AS open_tickets
-      FROM support_tickets
-      WHERE status = 'open'
-      `
-    );
+      pool.query(`
+        SELECT COUNT(*)::int AS open_tickets
+        FROM support_tickets
+        WHERE status = 'open'
+      `),
 
-    const recentUsersResult = await pool.query(
-      `
-      SELECT id, name, email, role
-      FROM users
-      ORDER BY id DESC
-      LIMIT 5
-      `
-    );
+      pool.query(`
+        SELECT COALESCE(SUM(price), 0)::int AS revenue_today
+        FROM rides
+        WHERE DATE(created_at) = CURRENT_DATE
+          AND status = 'completed'
+      `),
 
-    const recentRidesResult = await pool.query(
-      `
-      SELECT
-        r.id,
-        r.pickup,
-        r.dropoff,
-        r.status,
-        r.price
-      FROM rides r
-      ORDER BY r.created_at DESC
-      LIMIT 5
-      `
+      pool.query(`
+        SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0)::int AS avg_wait_time
+        FROM rides
+        WHERE status IN ('accepted', 'ongoing', 'completed')
+      `),
+
+      pool.query(`
+        SELECT
+          TO_CHAR(created_at, 'Dy') AS day,
+          COALESCE(SUM(price), 0)::int AS revenue
+        FROM rides
+        WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
+          AND status = 'completed'
+        GROUP BY DATE(created_at), TO_CHAR(created_at, 'Dy')
+        ORDER BY DATE(created_at) ASC
+      `),
+
+      pool.query(`
+        SELECT
+          ride_type,
+          COUNT(*)::int AS total
+        FROM rides
+        GROUP BY ride_type
+        ORDER BY total DESC
+      `),
+
+      pool.query(`
+        SELECT id, name, email, role
+        FROM users
+        ORDER BY id DESC
+        LIMIT 5
+      `),
+
+      pool.query(`
+        SELECT
+          r.id,
+          r.pickup,
+          r.dropoff,
+          r.status,
+          r.price,
+          r.ride_type,
+          r.created_at
+        FROM rides r
+        ORDER BY r.created_at DESC
+        LIMIT 5
+      `),
+    ]);
+
+    const weeklyRevenueMap = new Map();
+    ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach((day) => {
+      weeklyRevenueMap.set(day, 0);
+    });
+
+    for (const row of weeklyRevenueResult.rows || []) {
+      const cleanDay = String(row.day || "").trim();
+      weeklyRevenueMap.set(cleanDay, Number(row.revenue || 0));
+    }
+
+    const weeklyRevenue = Array.from(weeklyRevenueMap.entries()).map(
+      ([day, revenue]) => ({
+        day,
+        revenue,
+      })
     );
 
     return res.status(200).json({
@@ -61,7 +114,14 @@ exports.getDashboard = async (req, res) => {
         total_drivers: Number(driversResult.rows[0]?.total_drivers || 0),
         total_rides: Number(ridesResult.rows[0]?.total_rides || 0),
         open_tickets: Number(ticketsResult.rows[0]?.open_tickets || 0),
+        revenue_today: Number(revenueTodayResult.rows[0]?.revenue_today || 0),
+        avg_wait_time: Number(avgWaitTimeResult.rows[0]?.avg_wait_time || 0),
       },
+      weeklyRevenue,
+      ridesByType: (ridesByTypeResult.rows || []).map((item) => ({
+        ride_type: item.ride_type || "standard",
+        total: Number(item.total || 0),
+      })),
       recentUsers: recentUsersResult.rows || [],
       recentRides: recentRidesResult.rows || [],
     });
@@ -76,13 +136,11 @@ exports.getDashboard = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       SELECT id, name, email, phone, role, is_verified, created_at
       FROM users
       ORDER BY id DESC
-      `
-    );
+    `);
 
     return res.status(200).json({
       users: result.rows || [],
@@ -96,41 +154,9 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-exports.getSupportTickets = async (req, res) => {
-  try {
-    const result = await pool.query(
-      `
-      SELECT
-        s.id,
-        s.subject,
-        s.category,
-        s.message,
-        s.status,
-        s.created_at,
-        u.name AS user_name,
-        u.email AS user_email
-      FROM support_tickets s
-      INNER JOIN users u ON s.user_id = u.id
-      ORDER BY s.created_at DESC
-      `
-    );
-
-    return res.status(200).json({
-      tickets: result.rows || [],
-    });
-  } catch (error) {
-    console.error("GET ADMIN SUPPORT TICKETS ERROR:", error);
-    return res.status(500).json({
-      message: "Server error while fetching support tickets",
-      error: error.message,
-    });
-  }
-};
-
 exports.getDrivers = async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       SELECT
         u.id,
         u.name,
@@ -144,11 +170,10 @@ exports.getDrivers = async (req, res) => {
       LEFT JOIN driver_profiles dp ON u.id = dp.user_id
       WHERE u.role = 'driver'
       ORDER BY u.id DESC
-      `
-    );
+    `);
 
     return res.status(200).json({
-      drivers: result.rows,
+      drivers: result.rows || [],
     });
   } catch (error) {
     console.error("GET ADMIN DRIVERS ERROR:", error);
@@ -161,14 +186,14 @@ exports.getDrivers = async (req, res) => {
 
 exports.getRides = async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       SELECT
         r.id,
         r.pickup,
         r.dropoff,
         r.status,
         r.price,
+        r.ride_type,
         r.created_at,
         p.name AS passenger_name,
         d.name AS driver_name
@@ -176,11 +201,10 @@ exports.getRides = async (req, res) => {
       INNER JOIN users p ON r.passenger_id = p.id
       LEFT JOIN users d ON r.driver_id = d.id
       ORDER BY r.created_at DESC
-      `
-    );
+    `);
 
     return res.status(200).json({
-      rides: result.rows,
+      rides: result.rows || [],
     });
   } catch (error) {
     console.error("GET ADMIN RIDES ERROR:", error);
@@ -193,8 +217,7 @@ exports.getRides = async (req, res) => {
 
 exports.getSupportTickets = async (req, res) => {
   try {
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       SELECT
         s.id,
         s.subject,
@@ -207,11 +230,10 @@ exports.getSupportTickets = async (req, res) => {
       FROM support_tickets s
       INNER JOIN users u ON s.user_id = u.id
       ORDER BY s.created_at DESC
-      `
-    );
+    `);
 
     return res.status(200).json({
-      tickets: result.rows,
+      tickets: result.rows || [],
     });
   } catch (error) {
     console.error("GET ADMIN SUPPORT TICKETS ERROR:", error);
@@ -235,15 +257,12 @@ exports.updateSupportTicketStatus = async (req, res) => {
       });
     }
 
-    const result = await pool.query(
-      `
+    const result = await pool.query(`
       UPDATE support_tickets
       SET status = $1
       WHERE id = $2
       RETURNING *
-      `,
-      [status, Number(id)]
-    );
+    `, [status, Number(id)]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({

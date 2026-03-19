@@ -11,26 +11,52 @@ export default function AdminShell({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-green-50 to-white text-gray-900">
-      <div className="sticky top-0 z-40 border-b border-green-100 bg-white/90 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <h1 className="text-lg font-black text-green-700">Admin</h1>
+    <div className="min-h-screen bg-[#f5f7fb] text-slate-900">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-[260px_1fr]">
+        <aside className="hidden border-r border-white/10 bg-[#111827] text-white lg:block">
+          <div className="sticky top-0 h-screen overflow-y-auto px-5 py-6">
+            <div className="mb-6 flex items-center gap-3 px-2">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500 font-black text-white shadow-lg">
+                O
+              </div>
+              <div>
+                <p className="text-sm font-black tracking-wide text-white">
+                  ORIDE
+                </p>
+                <p className="text-xs text-slate-400">Admin Control</p>
+              </div>
+            </div>
 
-          <button
-            onClick={() => setOpen(true)}
-            className="rounded-xl border border-green-100 bg-white px-3 py-2 text-sm font-bold text-green-700 shadow-sm"
-          >
-            ☰
-          </button>
+            <AdminSidebar />
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+          <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur lg:hidden">
+            <div className="flex items-center justify-between px-4 py-4">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-500 font-black text-white">
+                  O
+                </div>
+                <div>
+                  <p className="text-sm font-black text-slate-900">ORIDE</p>
+                  <p className="text-xs text-slate-500">Admin</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setOpen(true)}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-lg font-bold text-slate-700 shadow-sm"
+              >
+                ☰
+              </button>
+            </div>
+          </div>
+
+          <main className="px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
+            {children}
+          </main>
         </div>
-      </div>
-
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr] lg:px-6">
-        <div className="hidden lg:block">
-          <AdminSidebar />
-        </div>
-
-        <div>{children}</div>
       </div>
 
       {open ? (
@@ -41,16 +67,24 @@ export default function AdminShell({
       ) : null}
 
       <div
-        className={`fixed left-0 top-0 z-50 h-full w-[85%] max-w-xs transform bg-white p-4 shadow-2xl transition-transform duration-300 lg:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-[84%] max-w-xs transform bg-[#111827] p-4 text-white shadow-2xl transition-transform duration-300 lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-black text-green-700">Admin</h2>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-500 font-black text-white">
+              O
+            </div>
+            <div>
+              <p className="text-sm font-black text-white">ORIDE</p>
+              <p className="text-xs text-slate-400">Admin Control</p>
+            </div>
+          </div>
 
           <button
             onClick={() => setOpen(false)}
-            className="rounded-xl border border-green-100 px-3 py-2 text-sm font-bold text-gray-700"
+            className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-slate-200"
           >
             ✕
           </button>
