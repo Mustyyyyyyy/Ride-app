@@ -20,4 +20,6 @@ router.get("/notifications", authMiddleware, driverController.getNotifications);
 router.get("/profile", authMiddleware, driverController.getProfile);
 router.put("/profile", authMiddleware, driverController.updateProfile);
 
+router.get("/analytics", authMiddleware, driverController.getDriverAnalytics);
+
 module.exports = router;

@@ -5,53 +5,70 @@ exports.getDashboard = async (req, res) => {
   try {
     const userId = Number(req.user.id);
 
-    const [ridesResult, walletResult, profileResult, notificationsResult] =
-      await Promise.all([
-        pool.query(
-          `
-          SELECT r.*, u.name AS passenger_name
-          FROM rides r
-          INNER JOIN users u ON r.passenger_id = u.id
-          WHERE r.driver_id = $1
-          ORDER BY r.created_at DESC
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT balance
-          FROM driver_wallets
-          WHERE user_id = $1
-          LIMIT 1
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT vehicle_model, plate_number, vehicle_color, is_online
-          FROM driver_profiles
-          WHERE user_id = $1
-          LIMIT 1
-          `,
-          [userId]
-        ),
-        pool.query(
-          `
-          SELECT id, title, message, type, is_read, created_at
-          FROM notifications
-          WHERE user_id = $1
-          ORDER BY created_at DESC
-          LIMIT 5
-          `,
-          [userId]
-        ),
-      ]);
+    const [
+      ridesResult,
+      walletResult,
+      profileResult,
+      notificationsResult,
+      todayEarningsResult,
+    ] = await Promise.all([
+      pool.query(
+        `
+        SELECT r.*, u.name AS passenger_name
+        FROM rides r
+        INNER JOIN users u ON r.passenger_id = u.id
+        WHERE r.driver_id = $1
+        ORDER BY r.created_at DESC
+        `,
+        [userId]
+      ),
+      pool.query(
+        `
+        SELECT balance
+        FROM driver_wallets
+        WHERE user_id = $1
+        LIMIT 1
+        `,
+        [userId]
+      ),
+      pool.query(
+        `
+        SELECT vehicle_model, plate_number, vehicle_color, is_online
+        FROM driver_profiles
+        WHERE user_id = $1
+        LIMIT 1
+        `,
+        [userId]
+      ),
+      pool.query(
+        `
+        SELECT id, title, message, type, is_read, created_at
+        FROM notifications
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 5
+        `,
+        [userId]
+      ),
+      pool.query(
+        `
+        SELECT COALESCE(SUM(price), 0)::int AS today_earnings
+        FROM rides
+        WHERE driver_id = $1
+        AND status = 'completed'
+        AND DATE(created_at) = CURRENT_DATE
+        `,
+        [userId]
+      ),
+    ]);
 
     const rides = ridesResult.rows || [];
+
     const completedTrips = rides.filter((r) => r.status === "completed").length;
     const ongoingTrips = rides.filter((r) =>
       ["accepted", "ongoing"].includes(r.status)
     ).length;
+
     const totalEarnings = rides
       .filter((r) => r.status === "completed")
       .reduce((sum, ride) => sum + Number(ride.price || 0), 0);
@@ -67,6 +84,9 @@ exports.getDashboard = async (req, res) => {
         completed_trips: completedTrips,
         ongoing_trips: ongoingTrips,
         total_earnings: totalEarnings,
+        today_earnings: Number(
+          todayEarningsResult.rows[0]?.today_earnings || 0
+        ),
       },
       wallet: walletResult.rows[0] || { balance: 0 },
       profile:
@@ -77,7 +97,7 @@ exports.getDashboard = async (req, res) => {
           is_online: false,
         },
       notifications: notificationsResult.rows || [],
-      recentRides: rides.slice(0, 5),
+      recentRides: rides.slice(0, 7),
       activeRide,
     });
   } catch (error) {
@@ -793,6 +813,49 @@ exports.updateProfile = async (req, res) => {
     console.error("UPDATE DRIVER PROFILE ERROR:", error);
     return res.status(500).json({
       message: "Server error while updating profile",
+      error: error.message,
+    });
+  }
+};
+
+exports.getDriverAnalytics = async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+
+    const result = await pool.query(
+      `
+      SELECT
+        TO_CHAR(created_at, 'Dy') AS day,
+        COALESCE(SUM(price), 0)::int AS earnings
+      FROM rides
+      WHERE driver_id = $1
+      AND status = 'completed'
+      AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+      GROUP BY DATE(created_at), TO_CHAR(created_at, 'Dy')
+      ORDER BY DATE(created_at) ASC
+      `,
+      [userId]
+    );
+
+    const dayMap = new Map();
+    ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach((day) => {
+      dayMap.set(day, 0);
+    });
+
+    for (const row of result.rows || []) {
+      dayMap.set(String(row.day).trim(), Number(row.earnings || 0));
+    }
+
+    return res.status(200).json({
+      trend: Array.from(dayMap.entries()).map(([day, earnings]) => ({
+        day,
+        earnings,
+      })),
+    });
+  } catch (error) {
+    console.error("GET DRIVER ANALYTICS ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while fetching driver analytics",
       error: error.message,
     });
   }

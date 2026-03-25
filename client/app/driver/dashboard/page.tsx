@@ -259,32 +259,38 @@ export default function DriverDashboardPage() {
           </div>
         ) : null}
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MiniStatCard
-            title="Total Trips"
-            value={data?.stats?.total_trips || 0}
-            subtitle="All assigned trips"
-            icon="🛣️"
-          />
-          <MiniStatCard
-            title="Completed Trips"
-            value={data?.stats?.completed_trips || 0}
-            subtitle="Successfully finished"
-            icon="✅"
-          />
-          <MiniStatCard
-            title="Ongoing Trips"
-            value={data?.stats?.ongoing_trips || 0}
-            subtitle="Trips in motion"
-            icon="🚗"
-          />
-          <MiniStatCard
-            title="Wallet Balance"
-            value={`₦${Number(data?.wallet?.balance || 0).toLocaleString()}`}
-            subtitle="Available earnings"
-            icon="💰"
-          />
-        </section>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+  <MiniStatCard
+    title="Total Trips"
+    value={data?.stats?.total_trips || 0}
+    subtitle="All assigned trips"
+    icon="🛣️"
+  />
+  <MiniStatCard
+    title="Completed Trips"
+    value={data?.stats?.completed_trips || 0}
+    subtitle="Successfully finished"
+    icon="✅"
+  />
+  <MiniStatCard
+    title="Ongoing Trips"
+    value={data?.stats?.ongoing_trips || 0}
+    subtitle="Trips in motion"
+    icon="🚗"
+  />
+  <MiniStatCard
+    title="Today Earnings"
+    value={`₦${Number(data?.stats?.today_earnings || 0).toLocaleString()}`}
+    subtitle="Completed rides today"
+    icon="📅"
+  />
+  <MiniStatCard
+    title="Wallet Balance"
+    value={`₦${Number(data?.wallet?.balance || 0).toLocaleString()}`}
+    subtitle="Available earnings"
+    icon="💰"
+  />
+</section>
 
         <section className="grid gap-4 md:grid-cols-3">
           <MiniStatCard

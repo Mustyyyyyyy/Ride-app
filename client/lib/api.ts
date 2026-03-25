@@ -225,7 +225,7 @@ export const driverApi = {
       token,
     }),
 
-  getDriverAnalytics: (token?: string | null) =>
+  getAnalytics: (token?: string | null) =>
   apiRequest("/api/driver/analytics", {
     method: "GET",
     token,
@@ -341,6 +341,12 @@ export const adminApi = {
 
   getAnalytics: (token?: string | null) =>
   apiRequest("/api/admin/analytics", {
+    method: "GET",
+    token,
+  }),
+
+    getDriverAnalytics: (token?: string | null) =>
+  apiRequest("/api/driver/analytics", {
     method: "GET",
     token,
   }),
