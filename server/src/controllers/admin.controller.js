@@ -317,3 +317,48 @@ exports.deleteDriver = async (req, res) => {
     });
   }
 };
+
+exports.getAdvancedAnalytics = async (req, res) => {
+  try {
+    const revenueTrend = await pool.query(`
+      SELECT
+        DATE(created_at) as date,
+        SUM(price) as revenue
+      FROM rides
+      WHERE status = 'completed'
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) DESC
+      LIMIT 7
+    `);
+
+    const rideStats = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed,
+        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending
+      FROM rides
+    `);
+
+    const paymentStats = await pool.query(`
+      SELECT
+        SUM(price) FILTER (WHERE payment_method = 'wallet' AND status='completed') AS wallet,
+        SUM(price) FILTER (WHERE payment_method = 'cash' AND status='completed') AS cash
+      FROM rides
+    `);
+
+    const users = await pool.query(`
+      SELECT COUNT(*) as total FROM users
+    `);
+
+    return res.json({
+      revenueTrend: revenueTrend.rows.reverse(),
+      rideStats: rideStats.rows[0],
+      paymentStats: paymentStats.rows[0],
+      totalUsers: users.rows[0].total,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Analytics error" });
+  }
+};

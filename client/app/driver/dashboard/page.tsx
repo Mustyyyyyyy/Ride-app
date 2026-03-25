@@ -144,9 +144,21 @@ export default function DriverDashboardPage() {
     user?.id,
   ]);
 
+  const completedRecentRides = useMemo(() => {
+    return (data?.recentRides || []).filter(
+      (ride: any) => ride.status === "completed"
+    );
+  }, [data]);
+
+  const totalRecentEarnings = useMemo(() => {
+    return completedRecentRides.reduce(
+      (sum: number, ride: any) => sum + Number(ride.price || 0),
+      0
+    );
+  }, [completedRecentRides]);
+
   const earningsTrend = useMemo(() => {
-    const rides = data?.recentRides || [];
-    const values = rides
+    const values = completedRecentRides
       .slice(0, 7)
       .reverse()
       .map((ride: any) => Number(ride.price || 0));
@@ -162,11 +174,14 @@ export default function DriverDashboardPage() {
       value,
       y: 160 - (value / max) * 120,
     }));
-  }, [data]);
+  }, [completedRecentRides]);
 
   const earningsPolyline = useMemo(() => {
     return earningsTrend
-      .map((point: { value: number; y: number }, index: number) => `${30 + index * 52},${point.y}`)
+      .map(
+        (point: { value: number; y: number }, index: number) =>
+          `${30 + index * 52},${point.y}`
+      )
       .join(" ");
   }, [earningsTrend]);
 
@@ -190,12 +205,29 @@ export default function DriverDashboardPage() {
     }));
   }, [data]);
 
-  const totalRecentEarnings = useMemo(() => {
-    return (data?.recentRides || []).reduce(
-      (sum: number, ride: any) => sum + Number(ride.price || 0),
-      0
-    );
+  const completionRate = useMemo(() => {
+    const total = Number(data?.stats?.total_trips || 0);
+    const completed = Number(data?.stats?.completed_trips || 0);
+
+    if (!total) return 0;
+    return Math.round((completed / total) * 100);
   }, [data]);
+
+  const cancellationRate = useMemo(() => {
+    const total = Number(data?.stats?.total_trips || 0);
+    const completed = Number(data?.stats?.completed_trips || 0);
+    const ongoing = Number(data?.stats?.ongoing_trips || 0);
+    const cancelledOrUnfinished = Math.max(total - completed - ongoing, 0);
+
+    if (!total) return 0;
+    return Math.round((cancelledOrUnfinished / total) * 100);
+  }, [data]);
+
+  const avgEarningsPerTrip = useMemo(() => {
+    const completed = Number(data?.stats?.completed_trips || 0);
+    if (!completed) return 0;
+    return Math.round(totalRecentEarnings / completed);
+  }, [data, totalRecentEarnings]);
 
   return (
     <PageTransition>
@@ -254,6 +286,27 @@ export default function DriverDashboardPage() {
           />
         </section>
 
+        <section className="grid gap-4 md:grid-cols-3">
+          <MiniStatCard
+            title="Completion Rate"
+            value={`${completionRate}%`}
+            subtitle="Trips successfully completed"
+            icon="📈"
+          />
+          <MiniStatCard
+            title="Cancellation Rate"
+            value={`${cancellationRate}%`}
+            subtitle="Trips not completed"
+            icon="❌"
+          />
+          <MiniStatCard
+            title="Avg Earnings / Trip"
+            value={`₦${avgEarningsPerTrip.toLocaleString()}`}
+            subtitle="Per completed ride"
+            icon="💵"
+          />
+        </section>
+
         <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
           <AnimatedCard className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-4">
@@ -262,7 +315,7 @@ export default function DriverDashboardPage() {
                   Earnings Trend
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Recent earnings activity from your latest rides.
+                  Recent earnings activity from completed rides only.
                 </p>
               </div>
 
@@ -308,15 +361,17 @@ export default function DriverDashboardPage() {
                   points={earningsPolyline}
                 />
 
-                {earningsTrend.map((point: { value: number; y: number }, index: number) => (
-                  <circle
-                    key={index}
-                    cx={30 + index * 52}
-                    cy={point.y}
-                    r="5"
-                    fill="#0f766e"
-                  />
-                ))}
+                {earningsTrend.map(
+                  (point: { value: number; y: number }, index: number) => (
+                    <circle
+                      key={index}
+                      cx={30 + index * 52}
+                      cy={point.y}
+                      r="5"
+                      fill="#0f766e"
+                    />
+                  )
+                )}
               </svg>
             </div>
           </AnimatedCard>
@@ -418,7 +473,7 @@ export default function DriverDashboardPage() {
               </div>
             </div>
 
-            {(data?.activeRide || data?.currentRide || data?.ongoingRide) ? (
+            {data?.activeRide || data?.currentRide || data?.ongoingRide ? (
               <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
                 <p className="text-sm font-semibold text-emerald-700">
                   Live Tracking Active

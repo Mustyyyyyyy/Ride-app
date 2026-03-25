@@ -225,6 +225,12 @@ export const driverApi = {
       token,
     }),
 
+  getDriverAnalytics: (token?: string | null) =>
+  apiRequest("/api/driver/analytics", {
+    method: "GET",
+    token,
+  }),
+
   acceptRide: (rideId: number | string, token?: string | null) =>
     apiRequest(`/api/driver/rides/${rideId}/accept`, {
       method: "POST",
@@ -298,6 +304,7 @@ export const driverApi = {
     }),
 };
 
+
 export const paymentApi = {
   getVirtualAccount: (token?: string | null) =>
     apiRequest("/api/payments/virtual-account", {
@@ -331,6 +338,12 @@ export const adminApi = {
       method: "GET",
       token,
     }),
+
+  getAnalytics: (token?: string | null) =>
+  apiRequest("/api/admin/analytics", {
+    method: "GET",
+    token,
+  }),
 
   getSupportTickets: (token?: string | null) =>
     apiRequest("/api/admin/support", {

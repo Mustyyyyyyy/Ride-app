@@ -23,6 +23,10 @@ type DashboardData = {
     ride_type: string;
     total: number;
   }>;
+  paymentStats?: {
+    wallet?: number | string;
+    cash?: number | string;
+  };
   recentUsers: Array<{
     id: number;
     name: string;
@@ -145,6 +149,12 @@ export default function AdminDashboardPage() {
       percent: (Number(item.total || 0) / max) * 100,
     }));
   }, [data]);
+
+  const walletRevenue = Number(data?.paymentStats?.wallet || 0);
+  const cashRevenue = Number(data?.paymentStats?.cash || 0);
+  const paymentTotal = walletRevenue + cashRevenue || 1;
+  const walletPercent = (walletRevenue / paymentTotal) * 100;
+  const cashPercent = (cashRevenue / paymentTotal) * 100;
 
   return (
     <PageTransition>
@@ -296,6 +306,100 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </AnimatedCard>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <AnimatedCard className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-slate-900">
+                Payment Breakdown
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Wallet vs cash revenue from completed rides.
+              </p>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-700">Wallet</span>
+                  <span className="text-slate-500">
+                    ₦{walletRevenue.toLocaleString()}
+                  </span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-emerald-500"
+                    style={{ width: `${walletPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-700">Cash</span>
+                  <span className="text-slate-500">
+                    ₦{cashRevenue.toLocaleString()}
+                  </span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-sky-500"
+                    style={{ width: `${cashPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </AnimatedCard>
+
+          <AnimatedCard className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-slate-900">
+                Platform Summary
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Quick overview of operations.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Total Rides
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  {data?.stats.total_rides || 0}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Open Tickets
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  {data?.stats.open_tickets || 0}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Wallet Revenue
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  ₦{walletRevenue.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Cash Revenue
+                </p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
+                  ₦{cashRevenue.toLocaleString()}
+                </p>
+              </div>
             </div>
           </AnimatedCard>
         </section>

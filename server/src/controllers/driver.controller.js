@@ -334,9 +334,9 @@ exports.updateRideStatus = async (req, res) => {
       });
     }
 
-    if (status === "completed") {
-      const fare = Number(ride.price || 0);
+    const paymentMethod = ride.payment_method || "wallet";
 
+    if (status === "completed" && paymentMethod === "wallet") {
       const passengerWalletCheck = await pool.query(
         `
         SELECT balance
@@ -351,7 +351,7 @@ exports.updateRideStatus = async (req, res) => {
         passengerWalletCheck.rows[0]?.balance || 0
       );
 
-      if (passengerBalance < fare) {
+      if (passengerBalance < ride.price) {
         return res.status(400).json({
           message: "Passenger has insufficient wallet balance",
         });
@@ -401,58 +401,77 @@ exports.updateRideStatus = async (req, res) => {
     if (status === "completed") {
       const fare = Number(updatedRide.price || 0);
 
-      await pool.query(
-        `
-        UPDATE driver_wallets
-        SET balance = balance + $1
-        WHERE user_id = $2
-        `,
-        [fare, userId]
-      );
+      if (paymentMethod === "wallet") {
 
-      await pool.query(
-        `
-        UPDATE wallets
-        SET balance = balance - $1
-        WHERE user_id = $2
-        `,
-        [fare, updatedRide.passenger_id]
-      );
+        await pool.query(
+          `
+          UPDATE driver_wallets
+          SET balance = balance + $1
+          WHERE user_id = $2
+          `,
+          [fare, userId]
+        );
 
-      await pool.query(
-        `
-        INSERT INTO transactions (user_id, amount, type, status, reference)
-        VALUES ($1, $2, $3, $4, $5)
-        `,
-        [userId, fare, "credit", "success", `TRIP-${updatedRide.id}`]
-      );
+        await pool.query(
+          `
+          UPDATE wallets
+          SET balance = balance - $1
+          WHERE user_id = $2
+          `,
+          [fare, updatedRide.passenger_id]
+        );
 
-      await pool.query(
-        `
-        INSERT INTO transactions (user_id, amount, type, status, reference)
-        VALUES ($1, $2, $3, $4, $5)
-        `,
-        [
-          updatedRide.passenger_id,
-          fare,
-          "debit",
-          "success",
-          `RIDE-${updatedRide.id}`,
-        ]
-      );
+        await pool.query(
+          `
+          INSERT INTO transactions (user_id, amount, type, status, reference)
+          VALUES ($1, $2, $3, $4, $5)
+          `,
+          [userId, fare, "credit", "success", `TRIP-${updatedRide.id}`]
+        );
 
-      await pool.query(
-        `
-        INSERT INTO notifications (user_id, title, message, type)
-        VALUES ($1, $2, $3, $4)
-        `,
-        [
-          updatedRide.passenger_id,
-          "Ride completed",
-          `Your ride has been completed. ₦${fare.toLocaleString()} was deducted from your wallet.`,
-          "ride",
-        ]
-      );
+        await pool.query(
+          `
+          INSERT INTO transactions (user_id, amount, type, status, reference)
+          VALUES ($1, $2, $3, $4, $5)
+          `,
+          [
+            updatedRide.passenger_id,
+            fare,
+            "debit",
+            "success",
+            `RIDE-${updatedRide.id}`,
+          ]
+        );
+
+        await pool.query(
+          `
+          INSERT INTO notifications (user_id, title, message, type)
+          VALUES ($1, $2, $3, $4)
+          `,
+          [
+            updatedRide.passenger_id,
+            "Ride completed",
+            `₦${fare.toLocaleString()} was deducted from your wallet.`,
+            "ride",
+          ]
+        );
+      }
+
+      if (paymentMethod === "cash") {
+
+        await pool.query(
+          `
+          INSERT INTO notifications (user_id, title, message, type)
+          VALUES ($1, $2, $3, $4)
+          `,
+          [
+            updatedRide.passenger_id,
+            "Ride completed",
+            `Please pay ₦${fare.toLocaleString()} to the driver in cash.`,
+            "ride",
+          ]
+        );
+      }
 
       await pool.query(
         `
@@ -462,7 +481,7 @@ exports.updateRideStatus = async (req, res) => {
         [
           userId,
           "Trip completed",
-          `Trip #${updatedRide.id} completed successfully. ₦${fare.toLocaleString()} added to your wallet.`,
+          `Trip #${updatedRide.id} completed successfully.`,
           "ride",
         ]
       );
@@ -636,6 +655,30 @@ exports.withdrawWallet = async (req, res) => {
       message: "Server error while withdrawing funds",
       error: error.message,
     });
+  }
+};
+
+exports.getDriverAnalytics = async (req, res) => {
+  try {
+    const driverId = req.user.id;
+
+    const result = await pool.query(`
+      SELECT
+        DATE(created_at) as date,
+        SUM(price) as earnings
+      FROM rides
+      WHERE driver_id = $1 AND status = 'completed'
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) DESC
+      LIMIT 7
+    `, [driverId]);
+
+    res.json({
+      trend: result.rows.reverse(),
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Driver analytics error" });
   }
 };
 
