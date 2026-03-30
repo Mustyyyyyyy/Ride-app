@@ -771,21 +771,21 @@ exports.getProfile = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT
-        u.id,
-        u.name,
-        u.email,
-        u.phone,
-        dp.vehicle_model,
-        dp.plate_number,
-        dp.vehicle_color,
-        dp.vehicle_image,
-        dp.ride_categories,
-        dp.is_online
-      FROM users u
-      LEFT JOIN driver_profiles dp ON u.id = dp.user_id
-      WHERE u.id = $1
-      LIMIT 1
+     SELECT
+  u.id,
+  u.name,
+  u.email,
+  u.phone,
+  dp.vehicle_model,
+  dp.plate_number,
+  dp.vehicle_color,
+  dp.vehicle_image,
+  dp.ride_categories,
+  dp.is_online
+FROM users u
+LEFT JOIN driver_profiles dp ON u.id = dp.user_id
+WHERE u.id = $1
+LIMIT 1
       `,
       [userId]
     );
