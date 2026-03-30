@@ -289,19 +289,21 @@ export const driverApi = {
     }),
 
   updateProfile: (
-    payload: {
-      vehicle_model: string;
-      plate_number: string;
-      vehicle_color: string;
-      is_online: boolean;
-    },
-    token?: string | null
-  ) =>
-    apiRequest("/api/driver/profile", {
-      method: "PUT",
-      body: payload,
-      token,
-    }),
+  payload: {
+    vehicle_model: string;
+    plate_number: string;
+    vehicle_color: string;
+    vehicle_image?: string;
+    ride_categories?: string[];
+    is_online: boolean;
+  },
+  token?: string | null
+) =>
+  apiRequest("/api/driver/profile", {
+    method: "PUT",
+    body: payload,
+    token,
+  }),
 };
 
 

@@ -5,7 +5,6 @@ function isWithinOgbomoso(lat, lng) {
   return lat >= 7.95 && lat <= 8.30 && lng >= 4.10 && lng <= 4.40;
 }
 
-
 exports.requestRide = async (req, res) => {
   try {
     const {
@@ -41,7 +40,6 @@ exports.requestRide = async (req, res) => {
       });
     }
 
-
     const hasCoords =
       pickup_lat != null &&
       pickup_lng != null &&
@@ -67,6 +65,13 @@ exports.requestRide = async (req, res) => {
     }
 
     const selectedRideType = ride_type || "standard";
+
+    const allowedRideTypes = ["standard", "comfort", "premium"];
+    if (!allowedRideTypes.includes(selectedRideType)) {
+      return res.status(400).json({
+        message: "Invalid ride type selected",
+      });
+    }
 
     const typeMultiplier =
       selectedRideType === "premium"
@@ -97,7 +102,6 @@ exports.requestRide = async (req, res) => {
         });
       }
     }
-
 
     const rideResult = await pool.query(
       `
@@ -131,7 +135,7 @@ exports.requestRide = async (req, res) => {
         finalDropoff,
         selectedRideType,
         payment_method || "wallet",
-        note || null,
+        note ? note.trim() : null,
         "pending",
         estimatedFare,
         pickup_lat ?? null,
@@ -144,7 +148,9 @@ exports.requestRide = async (req, res) => {
     const ride = rideResult.rows[0];
 
     const io = getIO();
-    io.to("drivers:lobby").emit("ride:new", { ride });
+
+    // Notify only drivers in the selected category room
+    io.to(`drivers:${selectedRideType}`).emit("ride:new", { ride });
 
     return res.status(201).json({
       message: "Ride created successfully",
@@ -154,10 +160,10 @@ exports.requestRide = async (req, res) => {
     console.error("REQUEST RIDE ERROR:", error);
     return res.status(500).json({
       message: "Server error",
+      error: error.message,
     });
   }
 };
-
 
 exports.getPassengerRides = async (req, res) => {
   try {
@@ -176,11 +182,10 @@ exports.getPassengerRides = async (req, res) => {
 
     return res.json({ rides: result.rows });
   } catch (error) {
-    console.error(error);
+    console.error("GET PASSENGER RIDES ERROR:", error);
     res.status(500).json({ message: "Error fetching rides" });
   }
 };
-
 
 exports.getRideById = async (req, res) => {
   try {
@@ -188,10 +193,19 @@ exports.getRideById = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT r.*, u.name AS driver_name
+      SELECT
+        r.*,
+        u.name AS driver_name,
+        u.phone AS driver_phone,
+        dp.vehicle_model,
+        dp.vehicle_color,
+        dp.plate_number,
+        dp.vehicle_image
       FROM rides r
       LEFT JOIN users u ON r.driver_id = u.id
+      LEFT JOIN driver_profiles dp ON dp.user_id = u.id
       WHERE r.id = $1
+      LIMIT 1
       `,
       [Number(id)]
     );
@@ -202,75 +216,173 @@ exports.getRideById = async (req, res) => {
 
     return res.json({ ride: result.rows[0] });
   } catch (error) {
-    console.error(error);
+    console.error("GET RIDE BY ID ERROR:", error);
     res.status(500).json({ message: "Error fetching ride" });
   }
 };
 
-
 exports.cancelRide = async (req, res) => {
   try {
+    const passengerId = Number(req.user.id);
     const { id } = req.params;
+
+    const existingRide = await pool.query(
+      `
+      SELECT *
+      FROM rides
+      WHERE id = $1 AND passenger_id = $2
+      LIMIT 1
+      `,
+      [Number(id), passengerId]
+    );
+
+    if (!existingRide.rows.length) {
+      return res.status(404).json({ message: "Ride not found" });
+    }
+
+    const ride = existingRide.rows[0];
+
+    if (!["pending", "accepted"].includes(ride.status)) {
+      return res.status(400).json({
+        message: "Only pending or accepted rides can be cancelled",
+      });
+    }
 
     const result = await pool.query(
       `
       UPDATE rides
-      SET status = 'cancelled'
+      SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
       `,
       [Number(id)]
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ message: "Ride not found" });
-    }
-
-    const ride = result.rows[0];
+    const updatedRide = result.rows[0];
 
     const io = getIO();
-    io.emit("ride:statusChanged", { ride });
 
-    res.json({ message: "Ride cancelled", ride });
+    io.to(`passenger:${updatedRide.passenger_id}`).emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    if (updatedRide.driver_id) {
+      io.to(`driver:${updatedRide.driver_id}`).emit("ride:statusChanged", {
+        ride: updatedRide,
+      });
+    }
+
+    io.to(`drivers:${updatedRide.ride_type}`).emit("ride:statusChanged", {
+      ride: updatedRide,
+    });
+
+    res.json({ message: "Ride cancelled", ride: updatedRide });
   } catch (error) {
-    console.error(error);
+    console.error("CANCEL RIDE ERROR:", error);
     res.status(500).json({ message: "Error cancelling ride" });
   }
 };
 
-
 exports.getAvailableRides = async (req, res) => {
   try {
+    const driverId = Number(req.user.id);
+
+    const profileResult = await pool.query(
+      `
+      SELECT is_online, ride_categories
+      FROM driver_profiles
+      WHERE user_id = $1
+      LIMIT 1
+      `,
+      [driverId]
+    );
+
+    if (
+      !profileResult.rows.length ||
+      !profileResult.rows[0].is_online
+    ) {
+      return res.json({ rides: [] });
+    }
+
+    const categories = profileResult.rows[0].ride_categories || ["standard"];
+
     const result = await pool.query(
       `
       SELECT r.*, u.name AS passenger_name
       FROM rides r
       JOIN users u ON r.passenger_id = u.id
       WHERE r.status = 'pending'
-      `
+      AND r.driver_id IS NULL
+      AND r.ride_type = ANY($1::text[])
+      ORDER BY r.created_at DESC
+      `,
+      [categories]
     );
 
     res.json({ rides: result.rows });
   } catch (error) {
-    console.error(error);
+    console.error("GET AVAILABLE RIDES ERROR:", error);
     res.status(500).json({ message: "Error fetching rides" });
   }
 };
-
 
 exports.acceptRide = async (req, res) => {
   try {
     const { id } = req.params;
     const { driver_id } = req.body;
 
+    const driverId = Number(driver_id);
+
+    const profileResult = await pool.query(
+      `
+      SELECT is_online, ride_categories
+      FROM driver_profiles
+      WHERE user_id = $1
+      LIMIT 1
+      `,
+      [driverId]
+    );
+
+    if (
+      !profileResult.rows.length ||
+      !profileResult.rows[0].is_online
+    ) {
+      return res.status(400).json({
+        message: "Driver must be online to accept rides",
+      });
+    }
+
+    const rideCheck = await pool.query(
+      `
+      SELECT *
+      FROM rides
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [Number(id)]
+    );
+
+    if (!rideCheck.rows.length) {
+      return res.status(404).json({ message: "Ride not found" });
+    }
+
+    const rideToAccept = rideCheck.rows[0];
+    const categories = profileResult.rows[0].ride_categories || ["standard"];
+
+    if (!categories.includes(rideToAccept.ride_type)) {
+      return res.status(400).json({
+        message: "Driver category does not match this ride type",
+      });
+    }
+
     const result = await pool.query(
       `
       UPDATE rides
-      SET driver_id = $1, status = 'accepted'
-      WHERE id = $2 AND status = 'pending'
+      SET driver_id = $1, status = 'accepted', updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2 AND status = 'pending' AND driver_id IS NULL
       RETURNING *
       `,
-      [driver_id, id]
+      [driverId, Number(id)]
     );
 
     if (!result.rows.length) {
@@ -280,15 +392,17 @@ exports.acceptRide = async (req, res) => {
     const ride = result.rows[0];
 
     const io = getIO();
-    io.emit("ride:accepted", { ride });
+
+    io.to(`passenger:${ride.passenger_id}`).emit("ride:accepted", { ride });
+    io.to(`driver:${driverId}`).emit("ride:accepted", { ride });
+    io.to(`drivers:${ride.ride_type}`).emit("ride:removed", { rideId: ride.id });
 
     res.json({ message: "Ride accepted", ride });
   } catch (error) {
-    console.error(error);
+    console.error("ACCEPT RIDE ERROR:", error);
     res.status(500).json({ message: "Error accepting ride" });
   }
 };
-
 
 exports.updateRideStatus = async (req, res) => {
   try {
@@ -298,11 +412,11 @@ exports.updateRideStatus = async (req, res) => {
     const result = await pool.query(
       `
       UPDATE rides
-      SET status = $1
+      SET status = $1, updated_at = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING *
       `,
-      [status, id]
+      [status, Number(id)]
     );
 
     if (!result.rows.length) {
@@ -312,11 +426,18 @@ exports.updateRideStatus = async (req, res) => {
     const ride = result.rows[0];
 
     const io = getIO();
-    io.emit("ride:statusChanged", { ride });
+
+    io.to(`passenger:${ride.passenger_id}`).emit("ride:statusChanged", { ride });
+
+    if (ride.driver_id) {
+      io.to(`driver:${ride.driver_id}`).emit("ride:statusChanged", { ride });
+    }
+
+    io.to(`drivers:${ride.ride_type}`).emit("ride:statusChanged", { ride });
 
     res.json({ message: "Status updated", ride });
   } catch (error) {
-    console.error(error);
+    console.error("UPDATE RIDE STATUS ERROR:", error);
     res.status(500).json({ message: "Error updating status" });
   }
 };
@@ -331,13 +452,14 @@ exports.getDriverRides = async (req, res) => {
       FROM rides r
       JOIN users u ON r.passenger_id = u.id
       WHERE r.driver_id = $1
+      ORDER BY r.created_at DESC
       `,
-      [driverId]
+      [Number(driverId)]
     );
 
     res.json({ rides: result.rows });
   } catch (error) {
-    console.error(error);
+    console.error("GET DRIVER RIDES ERROR:", error);
     res.status(500).json({ message: "Error fetching rides" });
   }
 };

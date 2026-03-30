@@ -33,7 +33,13 @@ exports.getDashboard = async (req, res) => {
       ),
       pool.query(
         `
-        SELECT vehicle_model, plate_number, vehicle_color, is_online
+        SELECT
+          vehicle_model,
+          plate_number,
+          vehicle_color,
+          vehicle_image,
+          ride_categories,
+          is_online
         FROM driver_profiles
         WHERE user_id = $1
         LIMIT 1
@@ -94,6 +100,8 @@ exports.getDashboard = async (req, res) => {
           vehicle_model: "",
           plate_number: "",
           vehicle_color: "",
+          vehicle_image: "",
+          ride_categories: ["standard"],
           is_online: false,
         },
       notifications: notificationsResult.rows || [],
@@ -115,7 +123,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online
+      SELECT is_online, ride_categories
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -129,6 +137,8 @@ exports.getAvailableRides = async (req, res) => {
       });
     }
 
+    const categories = profileCheck.rows[0].ride_categories || ["standard"];
+
     const result = await pool.query(
       `
       SELECT
@@ -138,8 +148,10 @@ exports.getAvailableRides = async (req, res) => {
       INNER JOIN users u ON r.passenger_id = u.id
       WHERE r.driver_id IS NULL
       AND r.status = 'pending'
+      AND r.ride_type = ANY($1::text[])
       ORDER BY r.created_at DESC
-      `
+      `,
+      [categories]
     );
 
     return res.status(200).json({
@@ -161,7 +173,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online
+      SELECT is_online, ride_categories
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -172,6 +184,31 @@ exports.acceptRide = async (req, res) => {
     if (profileCheck.rows.length === 0 || !profileCheck.rows[0].is_online) {
       return res.status(400).json({
         message: "You must be online to accept rides",
+      });
+    }
+
+    const rideCheck = await pool.query(
+      `
+      SELECT *
+      FROM rides
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [Number(id)]
+    );
+
+    if (rideCheck.rows.length === 0) {
+      return res.status(404).json({
+        message: "Ride not found",
+      });
+    }
+
+    const rideToAccept = rideCheck.rows[0];
+    const categories = profileCheck.rows[0].ride_categories || ["standard"];
+
+    if (!categories.includes(rideToAccept.ride_type)) {
+      return res.status(400).json({
+        message: "Your vehicle category does not match this ride type",
       });
     }
 
@@ -225,7 +262,7 @@ exports.acceptRide = async (req, res) => {
 
     io.to(`passenger:${ride.passenger_id}`).emit("ride:accepted", { ride });
     io.to(`driver:${userId}`).emit("ride:accepted", { ride });
-    io.to("drivers:lobby").emit("ride:removed", { rideId: ride.id });
+    io.to(`drivers:${ride.ride_type}`).emit("ride:removed", { rideId: ride.id });
 
     return res.status(200).json({
       message: "Ride accepted successfully",
@@ -742,6 +779,8 @@ exports.getProfile = async (req, res) => {
         dp.vehicle_model,
         dp.plate_number,
         dp.vehicle_color,
+        dp.vehicle_image,
+        dp.ride_categories,
         dp.is_online
       FROM users u
       LEFT JOIN driver_profiles dp ON u.id = dp.user_id
@@ -774,8 +813,16 @@ exports.updateProfile = async (req, res) => {
       vehicle_model,
       plate_number,
       vehicle_color,
+      vehicle_image,
+      ride_categories,
       is_online,
     } = req.body;
+
+    const allowedCategories = ["standard", "comfort", "premium"];
+
+    const safeCategories = Array.isArray(ride_categories)
+      ? ride_categories.filter((item) => allowedCategories.includes(item))
+      : ["standard"];
 
     const result = await pool.query(
       `
@@ -784,14 +831,18 @@ exports.updateProfile = async (req, res) => {
         vehicle_model,
         plate_number,
         vehicle_color,
+        vehicle_image,
+        ride_categories,
         is_online
       )
-      VALUES ($1, $2, $3, $4, $5)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (user_id)
       DO UPDATE SET
         vehicle_model = EXCLUDED.vehicle_model,
         plate_number = EXCLUDED.plate_number,
         vehicle_color = EXCLUDED.vehicle_color,
+        vehicle_image = EXCLUDED.vehicle_image,
+        ride_categories = EXCLUDED.ride_categories,
         is_online = EXCLUDED.is_online,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
@@ -801,6 +852,8 @@ exports.updateProfile = async (req, res) => {
         vehicle_model || "",
         plate_number || "",
         vehicle_color || "",
+        vehicle_image || "",
+        safeCategories,
         !!is_online,
       ]
     );

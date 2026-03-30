@@ -14,7 +14,10 @@ export default function DriverProfilePage() {
   const [vehicleModel, setVehicleModel] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
   const [vehicleColor, setVehicleColor] = useState("");
+  const [vehicleImage, setVehicleImage] = useState("");
+  const [rideCategories, setRideCategories] = useState<string[]>(["standard"]);
   const [isOnline, setIsOnline] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -27,6 +30,8 @@ export default function DriverProfilePage() {
         setVehicleModel(profile?.vehicle_model || "");
         setPlateNumber(profile?.plate_number || "");
         setVehicleColor(profile?.vehicle_color || "");
+        setVehicleImage(profile?.vehicle_image || "");
+        setRideCategories(profile?.ride_categories || ["standard"]);
         setIsOnline(!!profile?.is_online);
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
@@ -40,31 +45,49 @@ export default function DriverProfilePage() {
     if (!user?.id) return;
 
     const socket = getSocket();
-    socket.emit("joinDriverRoom", user.id);
 
-    if (isOnline) {
-      socket.emit("joinDriversLobby");
-    } else {
-      socket.emit("leaveDriversLobby");
-    }
-  }, [isOnline, user]);
+    socket.emit("joinDriver", { driverId: user.id });
+
+    socket.emit("updateDriverCategories", {
+      categories: rideCategories,
+    });
+  }, [user?.id, rideCategories]);
+
+  const toggleCategory = (category: string) => {
+    setRideCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
 
   const handleSave = async () => {
     setMessage("");
     setError("");
 
     try {
-      await driverApi.updateProfile(
+      const res = await driverApi.updateProfile(
         {
           vehicle_model: vehicleModel,
           plate_number: plateNumber,
           vehicle_color: vehicleColor,
+          vehicle_image: vehicleImage,
+          ride_categories: rideCategories,
           is_online: isOnline,
         },
         token
       );
 
       setMessage("Profile updated successfully");
+
+      // ✅ update socket rooms instantly
+      const socket = getSocket();
+      socket.emit("updateDriverCategories", {
+        categories: rideCategories,
+      });
+
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
     }
@@ -74,49 +97,95 @@ export default function DriverProfilePage() {
     <PageTransition>
       <main className="space-y-6">
         <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-black text-gray-900">Driver Profile</h1>
+          <h1 className="text-3xl font-black text-gray-900">
+            Driver Profile
+          </h1>
         </AnimatedCard>
 
         <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
           <div className="space-y-4">
+
+            {/* VEHICLE IMAGE */}
+            <input
+              value={vehicleImage}
+              onChange={(e) => setVehicleImage(e.target.value)}
+              placeholder="Vehicle Image URL"
+              className="w-full rounded-2xl border border-green-100 px-4 py-3"
+            />
+
+            {vehicleImage && (
+              <img
+                src={vehicleImage}
+                className="h-40 w-full rounded-2xl object-cover"
+              />
+            )}
+
             <input
               value={vehicleModel}
               onChange={(e) => setVehicleModel(e.target.value)}
               placeholder="Vehicle Model"
-              className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              className="w-full rounded-2xl border border-green-100 px-4 py-3"
             />
 
             <input
               value={plateNumber}
               onChange={(e) => setPlateNumber(e.target.value)}
               placeholder="Plate Number"
-              className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              className="w-full rounded-2xl border border-green-100 px-4 py-3"
             />
 
             <input
               value={vehicleColor}
               onChange={(e) => setVehicleColor(e.target.value)}
               placeholder="Vehicle Color"
-              className="w-full rounded-2xl border border-green-100 bg-white px-4 py-3 text-gray-900"
+              className="w-full rounded-2xl border border-green-100 px-4 py-3"
             />
 
+            {/* ✅ RIDE CATEGORY SELECTOR */}
+            <div className="space-y-2">
+              <p className="font-bold text-gray-900">
+                Ride Categories
+              </p>
+
+              <div className="flex gap-3 flex-wrap">
+                {["standard", "comfort", "premium"].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className={`px-4 py-2 rounded-xl font-semibold ${
+                      rideCategories.includes(cat)
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ONLINE SWITCH */}
             <div className="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4">
               <div>
-                <p className="font-bold text-gray-900">Driver Availability</p>
+                <p className="font-bold text-gray-900">
+                  Driver Availability
+                </p>
                 <p className="text-sm text-gray-500">
-                  {isOnline ? "You can receive live ride requests" : "You are currently offline"}
+                  {isOnline
+                    ? "You can receive ride requests"
+                    : "You are offline"}
                 </p>
               </div>
 
               <button
-                type="button"
                 onClick={() => setIsOnline((prev) => !prev)}
-                className={`relative inline-flex h-10 w-20 items-center rounded-full transition ${
+                className={`relative inline-flex h-10 w-20 items-center rounded-full ${
                   isOnline ? "bg-green-600" : "bg-gray-300"
                 }`}
               >
                 <span
-                  className={`inline-block h-8 w-8 transform rounded-full bg-white transition ${
+                  className={`inline-block h-8 w-8 rounded-full bg-white transition ${
                     isOnline ? "translate-x-11" : "translate-x-1"
                   }`}
                 />
@@ -125,13 +194,13 @@ export default function DriverProfilePage() {
 
             <AnimatedButton
               onClick={handleSave}
-              className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700"
+              className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white"
             >
               Save Profile
             </AnimatedButton>
 
-            {message ? <p className="text-green-700">{message}</p> : null}
-            {error ? <p className="text-red-600">{error}</p> : null}
+            {message && <p className="text-green-700">{message}</p>}
+            {error && <p className="text-red-600">{error}</p>}
           </div>
         </AnimatedCard>
       </main>
