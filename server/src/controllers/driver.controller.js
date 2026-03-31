@@ -717,29 +717,6 @@ exports.withdrawWallet = async (req, res) => {
   }
 };
 
-exports.getDriverAnalytics = async (req, res) => {
-  try {
-    const driverId = req.user.id;
-
-    const result = await pool.query(`
-      SELECT
-        DATE(created_at) as date,
-        SUM(price) as earnings
-      FROM rides
-      WHERE driver_id = $1 AND status = 'completed'
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) DESC
-      LIMIT 7
-    `, [driverId]);
-
-    res.json({
-      trend: result.rows.reverse(),
-    });
-
-  } catch (err) {
-    res.status(500).json({ message: "Driver analytics error" });
-  }
-};
 
 exports.getNotifications = async (req, res) => {
   try {
