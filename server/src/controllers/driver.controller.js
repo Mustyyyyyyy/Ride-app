@@ -584,9 +584,9 @@ exports.updateRideStatus = async (req, res) => {
       ride: updatedRide,
     });
 
-    io.to("drivers:lobby").emit("ride:statusChanged", {
-      ride: updatedRide,
-    });
+    io.to(`drivers:${updatedRide.ride_type}`).emit("ride:statusChanged", {
+  ride: updatedRide,
+});
 
     return res.status(200).json({
       message: "Ride status updated successfully",
@@ -771,26 +771,26 @@ exports.getProfile = async (req, res) => {
   try {
     const userId = Number(req.user.id);
 
-    const result = await pool.query(
-      `
-     SELECT
-  u.id,
-  u.name,
-  u.email,
-  u.phone,
-  dp.vehicle_model,
-  dp.plate_number,
-  dp.vehicle_color,
-  dp.vehicle_image,
-  dp.ride_categories,
-  dp.is_online
-FROM users u
-LEFT JOIN driver_profiles dp ON u.id = dp.user_id
-WHERE u.id = $1
-LIMIT 1
-      `,
-      [userId]
-    );
+  const result = await pool.query(
+  `
+  SELECT
+    u.id,
+    u.name,
+    u.email,
+    u.phone,
+    dp.vehicle_model,
+    dp.plate_number,
+    dp.vehicle_color,
+    dp.vehicle_image,
+    dp.ride_categories,
+    dp.is_online
+  FROM users u
+  LEFT JOIN driver_profiles dp ON u.id = dp.user_id
+  WHERE u.id = $1
+  LIMIT 1
+  `,
+  [userId]
+);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Driver profile not found" });
