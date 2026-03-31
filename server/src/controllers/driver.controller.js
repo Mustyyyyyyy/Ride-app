@@ -913,3 +913,47 @@ exports.getDriverAnalytics = async (req, res) => {
     });
   }
 };
+
+const cloudinary = require("../config/cloudinary");
+
+exports.uploadVehicleImage = async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Vehicle image file is required",
+      });
+    }
+
+    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+
+    const uploaded = await cloudinary.uploader.upload(base64, {
+      folder: "oride/drivers",
+      resource_type: "image",
+    });
+
+    await pool.query(
+      `
+      INSERT INTO driver_profiles (user_id, vehicle_image)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id)
+      DO UPDATE SET
+        vehicle_image = EXCLUDED.vehicle_image,
+        updated_at = CURRENT_TIMESTAMP
+      `,
+      [userId, uploaded.secure_url]
+    );
+
+    return res.status(200).json({
+      message: "Vehicle image uploaded successfully",
+      vehicle_image: uploaded.secure_url,
+    });
+  } catch (error) {
+    console.error("UPLOAD VEHICLE IMAGE ERROR:", error);
+    return res.status(500).json({
+      message: "Server error while uploading vehicle image",
+      error: error.message,
+    });
+  }
+};

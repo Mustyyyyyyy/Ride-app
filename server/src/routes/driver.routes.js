@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middleware/upload.middleware");
+
 
 const authMiddleware = require("../middleware/auth.middleware");
 const driverController = require("../controllers/driver.controller");
@@ -21,5 +23,13 @@ router.get("/profile", authMiddleware, driverController.getProfile);
 router.put("/profile", authMiddleware, driverController.updateProfile);
 
 router.get("/analytics", authMiddleware, driverController.getDriverAnalytics);
+
+router.post(
+  "/profile/upload-vehicle-image",
+  authMiddleware,
+  upload.single("image"),
+  driverController.uploadVehicleImage
+);
+
 
 module.exports = router;

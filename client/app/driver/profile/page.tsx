@@ -18,6 +18,7 @@ export default function DriverProfilePage() {
   const [rideCategories, setRideCategories] = useState<string[]>(["standard"]);
   const [isOnline, setIsOnline] = useState(false);
 
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -45,22 +46,39 @@ export default function DriverProfilePage() {
     if (!user?.id) return;
 
     const socket = getSocket();
-
     socket.emit("joinDriver", { driverId: user.id });
-
     socket.emit("updateDriverCategories", {
       categories: rideCategories,
     });
   }, [user?.id, rideCategories]);
 
   const toggleCategory = (category: string) => {
-    setRideCategories((prev) => {
-      if (prev.includes(category)) {
-        return prev.filter((c) => c !== category);
-      } else {
-        return [...prev, category];
-      }
-    });
+    setRideCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setMessage("");
+
+    try {
+      setUploadingImage(true);
+      const res = await driverApi.uploadVehicleImage(file, token);
+      setVehicleImage(res?.vehicle_image || "");
+      setMessage("Vehicle image uploaded successfully");
+    } catch (err: any) {
+      setError(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSave = async () => {
@@ -68,7 +86,7 @@ export default function DriverProfilePage() {
     setError("");
 
     try {
-      const res = await driverApi.updateProfile(
+      await driverApi.updateProfile(
         {
           vehicle_model: vehicleModel,
           plate_number: plateNumber,
@@ -80,14 +98,12 @@ export default function DriverProfilePage() {
         token
       );
 
-      setMessage("Profile updated successfully");
-
-      // ✅ update socket rooms instantly
       const socket = getSocket();
       socket.emit("updateDriverCategories", {
         categories: rideCategories,
       });
 
+      setMessage("Profile updated successfully");
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
     }
@@ -104,21 +120,32 @@ export default function DriverProfilePage() {
 
         <AnimatedCard className="rounded-2xl border border-green-100 bg-white p-6 shadow-sm">
           <div className="space-y-4">
+            <div className="space-y-3">
+              <p className="font-bold text-gray-900">Vehicle Image</p>
 
-            {/* VEHICLE IMAGE */}
-            <input
-              value={vehicleImage}
-              onChange={(e) => setVehicleImage(e.target.value)}
-              placeholder="Vehicle Image URL"
-              className="w-full rounded-2xl border border-green-100 px-4 py-3"
-            />
+              {vehicleImage ? (
+                <img
+                  src={vehicleImage}
+                  alt="Vehicle"
+                  className="h-48 w-full rounded-2xl object-cover border border-green-100"
+                />
+              ) : (
+                <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-green-200 bg-green-50 text-sm text-gray-500">
+                  No vehicle image uploaded yet
+                </div>
+              )}
 
-            {vehicleImage && (
-              <img
-                src={vehicleImage}
-                className="h-40 w-full rounded-2xl object-cover"
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full rounded-2xl border border-green-100 px-4 py-3"
               />
-            )}
+
+              {uploadingImage ? (
+                <p className="text-sm text-green-700">Uploading image...</p>
+              ) : null}
+            </div>
 
             <input
               value={vehicleModel}
@@ -141,19 +168,16 @@ export default function DriverProfilePage() {
               className="w-full rounded-2xl border border-green-100 px-4 py-3"
             />
 
-            {/* ✅ RIDE CATEGORY SELECTOR */}
             <div className="space-y-2">
-              <p className="font-bold text-gray-900">
-                Ride Categories
-              </p>
+              <p className="font-bold text-gray-900">Ride Categories</p>
 
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex flex-wrap gap-3">
                 {["standard", "comfort", "premium"].map((cat) => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => toggleCategory(cat)}
-                    className={`px-4 py-2 rounded-xl font-semibold ${
+                    className={`rounded-xl px-4 py-2 font-semibold ${
                       rideCategories.includes(cat)
                         ? "bg-green-600 text-white"
                         : "bg-gray-100 text-gray-700"
@@ -165,12 +189,9 @@ export default function DriverProfilePage() {
               </div>
             </div>
 
-            {/* ONLINE SWITCH */}
             <div className="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4">
               <div>
-                <p className="font-bold text-gray-900">
-                  Driver Availability
-                </p>
+                <p className="font-bold text-gray-900">Driver Availability</p>
                 <p className="text-sm text-gray-500">
                   {isOnline
                     ? "You can receive ride requests"
@@ -179,6 +200,7 @@ export default function DriverProfilePage() {
               </div>
 
               <button
+                type="button"
                 onClick={() => setIsOnline((prev) => !prev)}
                 className={`relative inline-flex h-10 w-20 items-center rounded-full ${
                   isOnline ? "bg-green-600" : "bg-gray-300"
@@ -199,8 +221,8 @@ export default function DriverProfilePage() {
               Save Profile
             </AnimatedButton>
 
-            {message && <p className="text-green-700">{message}</p>}
-            {error && <p className="text-red-600">{error}</p>}
+            {message ? <p className="text-green-700">{message}</p> : null}
+            {error ? <p className="text-red-600">{error}</p> : null}
           </div>
         </AnimatedCard>
       </main>
