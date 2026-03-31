@@ -1,5 +1,7 @@
 const pool = require("../config/db");
 const { getIO } = require("../socket");
+const cloudinary = require("../config/cloudinary");
+
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -914,7 +916,6 @@ exports.getDriverAnalytics = async (req, res) => {
   }
 };
 
-const cloudinary = require("../config/cloudinary");
 
 exports.uploadVehicleImage = async (req, res) => {
   try {

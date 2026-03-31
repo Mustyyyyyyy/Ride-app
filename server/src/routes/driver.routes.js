@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/upload.middleware");
-
 
 const authMiddleware = require("../middleware/auth.middleware");
 const driverController = require("../controllers/driver.controller");
+const upload = require("../middleware/upload.middleware");
 
 router.get("/dashboard", authMiddleware, driverController.getDashboard);
 router.get("/available-rides", authMiddleware, driverController.getAvailableRides);
@@ -30,6 +29,5 @@ router.post(
   upload.single("image"),
   driverController.uploadVehicleImage
 );
-
 
 module.exports = router;
