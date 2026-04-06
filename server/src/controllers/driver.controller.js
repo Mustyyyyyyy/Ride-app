@@ -36,12 +36,12 @@ exports.getDashboard = async (req, res) => {
       pool.query(
         `
         SELECT
-          vehicleModel,
-          plateNumber,
-          vehicleImage,
-          isOnline,
-          vehicleType,
-          vehicleBrand
+          vehicle_model AS vehicleModel,
+          plate_number AS plateNumber,
+          vehicle_image AS vehicleImage,
+          is_online AS isOnline,
+          vehicle_type AS vehicleType,
+          vehicle_brand AS vehicleBrand
         FROM driver_profiles
         WHERE user_id = $1
         LIMIT 1
@@ -742,12 +742,12 @@ exports.getProfile = async (req, res) => {
     u.name,
     u.email,
     u.phone,
-    dp.vehicleModel,
-    dp.plateNumber,
-    dp.vehicleImage,
-    dp.vehicleType,
-    dp.vehicleBrand,
-    dp.isOnline
+    dp.vehicle_model AS vehicleModel,
+    dp.plate_number AS plateNumber,
+    dp.vehicle_image AS vehicleImage,
+    dp.vehicle_type AS vehicleType,
+    dp.vehicle_brand AS vehicleBrand,
+    dp.is_online AS isOnline
   FROM users u
   LEFT JOIN driver_profiles dp ON u.id = dp.user_id
   WHERE u.id = $1
@@ -788,22 +788,22 @@ exports.updateProfile = async (req, res) => {
       `
       INSERT INTO driver_profiles (
         user_id,
-        vehicleModel,
-        plateNumber,
-        vehicleImage,
-        vehicleType,
-        vehicleBrand,
-        isOnline
+        vehicle_model,
+        plate_number,
+        vehicle_image,
+        vehicle_type,
+        vehicle_brand,
+        is_online
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (user_id)
       DO UPDATE SET
-        vehicleModel = EXCLUDED.vehicleModel,
-        plateNumber = EXCLUDED.plateNumber,
-        vehicleImage = EXCLUDED.vehicleImage,
-        vehicleType = EXCLUDED.vehicleType,
-        vehicleBrand = EXCLUDED.vehicleBrand,
-        isOnline = EXCLUDED.isOnline,
+        vehicle_model = EXCLUDED.vehicle_model,
+        plate_number = EXCLUDED.plate_number,
+        vehicle_image = EXCLUDED.vehicle_image,
+        vehicle_type = EXCLUDED.vehicle_type,
+        vehicle_brand = EXCLUDED.vehicle_brand,
+        is_online = EXCLUDED.is_online,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
       `,
@@ -894,11 +894,11 @@ exports.uploadVehicleImage = async (req, res) => {
 
     await pool.query(
       `
-      INSERT INTO driver_profiles (user_id, vehicleImage)
+      INSERT INTO driver_profiles (user_id, vehicle_image)
       VALUES ($1, $2)
       ON CONFLICT (user_id)
       DO UPDATE SET
-        vehicleImage = EXCLUDED.vehicleImage,
+        vehicle_image = EXCLUDED.vehicle_image,
         updated_at = CURRENT_TIMESTAMP
       `,
       [userId, uploaded.secure_url]
