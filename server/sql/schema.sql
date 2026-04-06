@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS rides (
   distance_km NUMERIC(10,2) DEFAULT 0,
   status VARCHAR(20) DEFAULT 'pending',
   payment_method VARCHAR(20) DEFAULT 'cash',
+  ride_type VARCHAR(50) DEFAULT 'standard',
   requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   accepted_at TIMESTAMP,
   started_at TIMESTAMP,
@@ -108,6 +109,28 @@ CREATE TABLE IF NOT EXISTS safety_reports (
   status VARCHAR(30) DEFAULT 'open',
   priority VARCHAR(20) DEFAULT 'medium',
   admin_note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS paystack_customers (
+  id SERIAL PRIMARY KEY,
+  user_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  customer_code VARCHAR(100) NOT NULL,
+  email VARCHAR(120) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS virtual_accounts (
+  id SERIAL PRIMARY KEY,
+  user_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  customer_code VARCHAR(100) NOT NULL,
+  account_name VARCHAR(200) NOT NULL,
+  account_number VARCHAR(20) NOT NULL,
+  bank_name VARCHAR(100) NOT NULL,
+  provider_slug VARCHAR(50),
+  paystack_dva_id VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

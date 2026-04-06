@@ -8,29 +8,9 @@ exports.getOrCreateVirtualAccount = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const existingAccount = await pool.query(
-      `
-      SELECT *
-      FROM virtual_accounts
-      WHERE user_id = $1
-      LIMIT 1
-      `,
-      [userId]
-    );
-
-    if (existingAccount.rows.length > 0) {
-      return res.status(200).json({
-        account: existingAccount.rows[0],
-      });
-    }
-
+    // Check if user exists
     const userResult = await pool.query(
-      `
-      SELECT id, name, email
-      FROM users
-      WHERE id = $1
-      LIMIT 1
-      `,
+      `SELECT id, name, email FROM users WHERE id = $1 LIMIT 1`,
       [userId]
     );
 
@@ -42,26 +22,83 @@ exports.getOrCreateVirtualAccount = async (req, res) => {
 
     const user = userResult.rows[0];
 
+    try {
+      // Check for existing virtual account
+      const existingAccount = await pool.query(
+        `SELECT * FROM virtual_accounts WHERE user_id = $1 LIMIT 1`,
+        [userId]
+      );
+
+      if (existingAccount.rows.length > 0) {
+        return res.status(200).json({
+          account: existingAccount.rows[0],
+        });
+      }
+    } catch (dbError) {
+      // Table might not exist yet, continue
+      console.log("Virtual accounts table check:", dbError.message);
+    }
+
+    // Try to get or create Paystack customer
     let customerCode = null;
 
-    const existingCustomer = await pool.query(
-      `
-      SELECT *
-      FROM paystack_customers
-      WHERE user_id = $1
-      LIMIT 1
-      `,
-      [userId]
-    );
+    try {
+      const existingCustomer = await pool.query(
+        `SELECT * FROM paystack_customers WHERE user_id = $1 LIMIT 1`,
+        [userId]
+      );
 
-    if (existingCustomer.rows.length > 0) {
-      customerCode = existingCustomer.rows[0].customer_code;
-    } else {
-      const customerResponse = await axios.post(
-        "https://api.paystack.co/customer",
+      if (existingCustomer.rows.length > 0) {
+        customerCode = existingCustomer.rows[0].customer_code;
+      }
+    } catch (dbError) {
+      console.log("Paystack customers table check:", dbError.message);
+    }
+
+    // Create customer on Paystack if not exists
+    if (!customerCode) {
+      try {
+        const customerResponse = await axios.post(
+          "https://api.paystack.co/customer",
+          {
+            email: user.email,
+            first_name: user.name,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        customerCode = customerResponse.data.data.customer_code;
+
+        // Save to database (ignore errors if table doesn't exist)
+        try {
+          await pool.query(
+            `INSERT INTO paystack_customers (user_id, customer_code, email) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET customer_code = EXCLUDED.customer_code`,
+            [userId, customerCode, user.email]
+          );
+        } catch (saveError) {
+          console.log("Could not save Paystack customer:", saveError.message);
+        }
+      } catch (paystackError) {
+        console.error("Paystack customer creation failed:", paystackError.response?.data || paystackError.message);
+        return res.status(500).json({
+          message: "Failed to create payment account with Paystack",
+          error: paystackError.response?.data?.message || paystackError.message,
+        });
+      }
+    }
+
+    // Create dedicated virtual account
+    try {
+      const dvaResponse = await axios.post(
+        "https://api.paystack.co/dedicated_account",
         {
-          email: user.email,
-          first_name: user.name,
+          customer: customerCode,
+          preferred_bank: "wema-bank",
         },
         {
           headers: {
@@ -71,77 +108,60 @@ exports.getOrCreateVirtualAccount = async (req, res) => {
         }
       );
 
-      customerCode = customerResponse.data.data.customer_code;
+      const dva = dvaResponse.data.data;
 
-      await pool.query(
-        `
-        INSERT INTO paystack_customers (user_id, customer_code, email)
-        VALUES ($1, $2, $3)
-        `,
-        [userId, customerCode, user.email]
-      );
-    }
+      // Save virtual account (ignore errors if table doesn't exist)
+      try {
+        await pool.query(
+          `INSERT INTO virtual_accounts (user_id, customer_code, account_name, account_number, bank_name, provider_slug, paystack_dva_id) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           ON CONFLICT (user_id) DO UPDATE SET account_number = EXCLUDED.account_number`,
+          [
+            userId,
+            customerCode,
+            dva.account_name,
+            dva.account_number,
+            dva.bank?.name || "Wema Bank",
+            dva.bank?.slug || "",
+            String(dva.id),
+          ]
+        );
 
-    const dvaResponse = await axios.post(
-      "https://api.paystack.co/dedicated_account",
-      {
-        customer: customerCode,
-        preferred_bank: "wema-bank",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
+        const saved = await pool.query(
+          `SELECT * FROM virtual_accounts WHERE user_id = $1 LIMIT 1`,
+          [userId]
+        );
+
+        return res.status(200).json({
+          account: saved.rows[0],
+        });
+      } catch (saveError) {
+        console.log("Could not save virtual account:", saveError.message);
+        // Return the account details even if we couldn't save
+        return res.status(200).json({
+          account: {
+            user_id: userId,
+            customer_code: customerCode,
+            account_name: dva.account_name,
+            account_number: dva.account_number,
+            bank_name: dva.bank?.name || "Wema Bank",
+            provider_slug: dva.bank?.slug || "",
+            paystack_dva_id: String(dva.id),
+          },
+        });
       }
-    );
-
-    const dva = dvaResponse.data.data;
-
-    await pool.query(
-      `
-      INSERT INTO virtual_accounts (
-        user_id,
-        customer_code,
-        account_name,
-        account_number,
-        bank_name,
-        provider_slug,
-        paystack_dva_id
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `,
-      [
-        userId,
-        customerCode,
-        dva.account_name,
-        dva.account_number,
-        dva.bank?.name || "Wema Bank",
-        dva.bank?.slug || "",
-        String(dva.id),
-      ]
-    );
-
-    const saved = await pool.query(
-      `
-      SELECT *
-      FROM virtual_accounts
-      WHERE user_id = $1
-      LIMIT 1
-      `,
-      [userId]
-    );
-
-    return res.status(200).json({
-      account: saved.rows[0],
-    });
+    } catch (dvaError) {
+      console.error("DVA creation failed:", dvaError.response?.data || dvaError.message);
+      return res.status(500).json({
+        message: "Failed to create virtual account",
+        error: dvaError.response?.data?.message || dvaError.message,
+      });
+    }
   } catch (error) {
-    console.error(
-      "GET OR CREATE VIRTUAL ACCOUNT ERROR:",
-      error.response?.data || error.message
-    );
+    console.error("GET OR CREATE VIRTUAL ACCOUNT ERROR:", error.message);
     return res.status(500).json({
       message: "Failed to create transfer account",
+      error: error.message,
     });
   }
 };
