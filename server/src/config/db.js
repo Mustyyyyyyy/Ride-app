@@ -6,9 +6,14 @@ const pool = new Pool({
   database: 'oride_db',
   user: 'oride_db_user',
   password: '3tlzVbNAG6NvMeE9u6MA9oNf7C5VB3X6',
-  ssl: process.env.NODE_ENV === 'production' ? {
+  ssl: {
     rejectUnauthorized: false,
-  } : false,
+  },
+  connectionTimeoutMillis: 20000,
+  query_timeout: 20000,
+  idleTimeoutMillis: 30000,
+  max: 5,
+  allowExitOnIdle: true,
 });
 
 pool
