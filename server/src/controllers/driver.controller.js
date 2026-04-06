@@ -36,12 +36,12 @@ exports.getDashboard = async (req, res) => {
       pool.query(
         `
         SELECT
-          vehicle_model,
-          plate_number,
-          vehicle_image,
-          is_online,
-          vehicle_type,
-          vehicle_brand
+          vehicleModel,
+          plateNumber,
+          vehicleImage,
+          isOnline,
+          vehicleType,
+          vehicleBrand
         FROM driver_profiles
         WHERE user_id = $1
         LIMIT 1
@@ -99,12 +99,12 @@ exports.getDashboard = async (req, res) => {
       wallet: walletResult.rows[0] || { balance: 0 },
       profile:
         profileResult.rows[0] || {
-          vehicle_model: "",
-          plate_number: "",
-          vehicle_image: "",
-          is_online: false,
-          vehicle_type: "",
-          vehicle_brand: "",
+          vehicleModel: "",
+          plateNumber: "",
+          vehicleImage: "",
+          isOnline: false,
+          vehicleType: "",
+          vehicleBrand: "",
         },
       notifications: notificationsResult.rows || [],
       recentRides: rides.slice(0, 7),
@@ -125,7 +125,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online
+      SELECT isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -133,7 +133,7 @@ exports.getAvailableRides = async (req, res) => {
       [userId]
     );
 
-    if (profileCheck.rows.length === 0 || !profileCheck.rows[0].is_online) {
+    if (profileCheck.rows.length === 0 || !profileCheck.rows[0].isOnline) {
       return res.status(200).json({
         rides: [],
       });
@@ -171,7 +171,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online
+      SELECT isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -179,7 +179,7 @@ exports.acceptRide = async (req, res) => {
       [userId]
     );
 
-    if (profileCheck.rows.length === 0 || !profileCheck.rows[0].is_online) {
+    if (profileCheck.rows.length === 0 || !profileCheck.rows[0].isOnline) {
       return res.status(400).json({
         message: "You must be online to accept rides",
       });
@@ -742,12 +742,12 @@ exports.getProfile = async (req, res) => {
     u.name,
     u.email,
     u.phone,
-    dp.vehicle_model,
-    dp.plate_number,
-    dp.vehicle_image,
-    dp.vehicle_type,
-    dp.vehicle_brand,
-    dp.is_online
+    dp.vehicleModel,
+    dp.plateNumber,
+    dp.vehicleImage,
+    dp.vehicleType,
+    dp.vehicleBrand,
+    dp.isOnline
   FROM users u
   LEFT JOIN driver_profiles dp ON u.id = dp.user_id
   WHERE u.id = $1
@@ -776,45 +776,45 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = Number(req.user.id);
     const {
-      vehicle_model,
-      plate_number,
-      vehicle_image,
-      vehicle_type,
-      vehicle_brand,
-      is_online,
+      vehicleModel,
+      plateNumber,
+      vehicleImage,
+      vehicleType,
+      vehicleBrand,
+      isOnline,
     } = req.body;
 
     const result = await pool.query(
       `
       INSERT INTO driver_profiles (
         user_id,
-        vehicle_model,
-        plate_number,
-        vehicle_image,
-        vehicle_type,
-        vehicle_brand,
-        is_online
+        vehicleModel,
+        plateNumber,
+        vehicleImage,
+        vehicleType,
+        vehicleBrand,
+        isOnline
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (user_id)
       DO UPDATE SET
-        vehicle_model = EXCLUDED.vehicle_model,
-        plate_number = EXCLUDED.plate_number,
-        vehicle_image = EXCLUDED.vehicle_image,
-        vehicle_type = EXCLUDED.vehicle_type,
-        vehicle_brand = EXCLUDED.vehicle_brand,
-        is_online = EXCLUDED.is_online,
+        vehicleModel = EXCLUDED.vehicleModel,
+        plateNumber = EXCLUDED.plateNumber,
+        vehicleImage = EXCLUDED.vehicleImage,
+        vehicleType = EXCLUDED.vehicleType,
+        vehicleBrand = EXCLUDED.vehicleBrand,
+        isOnline = EXCLUDED.isOnline,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
       `,
       [
         userId,
-        vehicle_model || "",
-        plate_number || "",
-        vehicle_image || "",
-        vehicle_type || "",
-        vehicle_brand || "",
-        !!is_online,
+        vehicleModel || "",
+        plateNumber || "",
+        vehicleImage || "",
+        vehicleType || "",
+        vehicleBrand || "",
+        !!isOnline,
       ]
     );
 
@@ -894,11 +894,11 @@ exports.uploadVehicleImage = async (req, res) => {
 
     await pool.query(
       `
-      INSERT INTO driver_profiles (user_id, vehicle_image)
+      INSERT INTO driver_profiles (user_id, vehicleImage)
       VALUES ($1, $2)
       ON CONFLICT (user_id)
       DO UPDATE SET
-        vehicle_image = EXCLUDED.vehicle_image,
+        vehicleImage = EXCLUDED.vehicleImage,
         updated_at = CURRENT_TIMESTAMP
       `,
       [userId, uploaded.secure_url]
@@ -906,7 +906,7 @@ exports.uploadVehicleImage = async (req, res) => {
 
     return res.status(200).json({
       message: "Vehicle image uploaded successfully",
-      vehicle_image: uploaded.secure_url,
+      vehicleImage: uploaded.secure_url,
     });
   } catch (error) {
     console.error("UPLOAD VEHICLE IMAGE ERROR:", error);

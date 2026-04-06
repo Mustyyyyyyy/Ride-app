@@ -197,10 +197,11 @@ exports.getRideById = async (req, res) => {
         r.*,
         u.name AS driver_name,
         u.phone AS driver_phone,
-        dp.vehicle_model,
-        dp.vehicle_color,
-        dp.plate_number,
-        dp.vehicle_image
+        dp.vehicleModel,
+        dp.vehicleType,
+        dp.vehicleBrand,
+        dp.plateNumber,
+        dp.vehicleImage
       FROM rides r
       LEFT JOIN users u ON r.driver_id = u.id
       LEFT JOIN driver_profiles dp ON dp.user_id = u.id
@@ -289,7 +290,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileResult = await pool.query(
       `
-      SELECT is_online, ride_categories
+      SELECT isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -299,7 +300,7 @@ exports.getAvailableRides = async (req, res) => {
 
     if (
       !profileResult.rows.length ||
-      !profileResult.rows[0].is_online
+      !profileResult.rows[0].isOnline
     ) {
       return res.json({ rides: [] });
     }
@@ -335,7 +336,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileResult = await pool.query(
       `
-      SELECT is_online, ride_categories
+      SELECT isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -345,7 +346,7 @@ exports.acceptRide = async (req, res) => {
 
     if (
       !profileResult.rows.length ||
-      !profileResult.rows[0].is_online
+      !profileResult.rows[0].isOnline
     ) {
       return res.status(400).json({
         message: "Driver must be online to accept rides",

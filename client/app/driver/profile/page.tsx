@@ -28,12 +28,12 @@ export default function DriverProfilePage() {
         const data = await driverApi.getProfile(token);
         const profile = data?.profile;
 
-        setVehicleModel(profile?.vehicle_model || "");
-        setPlateNumber(profile?.plate_number || "");
-        setVehicleType(profile?.vehicle_type || "");
-        setVehicleBrand(profile?.vehicle_brand || "");
-        setVehicleImage(profile?.vehicle_image || "");
-        setIsOnline(!!profile?.is_online);
+        setVehicleModel(profile?.vehicleModel || "");
+        setPlateNumber(profile?.plateNumber || "");
+        setVehicleType(profile?.vehicleType || "");
+        setVehicleBrand(profile?.vehicleBrand || "");
+        setVehicleImage(profile?.vehicleImage || "");
+        setIsOnline(!!profile?.isOnline);
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
       }
@@ -77,12 +77,12 @@ export default function DriverProfilePage() {
     try {
       await driverApi.updateProfile(
         {
-          vehicle_model: vehicleModel,
-          plate_number: plateNumber,
-          vehicle_type: vehicleType,
-          vehicle_brand: vehicleBrand,
-          vehicle_image: vehicleImage,
-          is_online: isOnline,
+          vehicleModel: vehicleModel,
+          plateNumber: plateNumber,
+          vehicleType: vehicleType,
+          vehicleBrand: vehicleBrand,
+          vehicleImage: vehicleImage,
+          isOnline: isOnline,
         },
         token
       );

@@ -4,18 +4,18 @@ import { useState } from "react";
 
 type DriverProfileFormProps = {
   initialData?: {
-    vehicle_model?: string;
-    plate_number?: string;
-    vehicle_type?: string;
-    vehicle_brand?: string;
-    is_online?: boolean;
+    vehicleModel?: string;
+    plateNumber?: string;
+    vehicleType?: string;
+    vehicleBrand?: string;
+    isOnline?: boolean;
   };
   onSave: (payload: {
-    vehicle_model: string;
-    plate_number: string;
-    vehicle_type: string;
-    vehicle_brand: string;
-    is_online: boolean;
+    vehicleModel: string;
+    plateNumber: string;
+    vehicleType: string;
+    vehicleBrand: string;
+    isOnline: boolean;
   }) => Promise<void>;
 };
 
@@ -24,18 +24,18 @@ export default function DriverProfileForm({
   onSave,
 }: DriverProfileFormProps) {
   const [vehicleModel, setVehicleModel] = useState(
-    initialData?.vehicle_model || ""
+    initialData?.vehicleModel || ""
   );
   const [plateNumber, setPlateNumber] = useState(
-    initialData?.plate_number || ""
+    initialData?.plateNumber || ""
   );
   const [vehicleType, setVehicleType] = useState(
-    initialData?.vehicle_type || ""
+    initialData?.vehicleType || ""
   );
   const [vehicleBrand, setVehicleBrand] = useState(
-    initialData?.vehicle_brand || ""
+    initialData?.vehicleBrand || ""
   );
-  const [isOnline, setIsOnline] = useState(!!initialData?.is_online);
+  const [isOnline, setIsOnline] = useState(!!initialData?.isOnline);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,11 +48,11 @@ export default function DriverProfileForm({
       setLoading(true);
 
       await onSave({
-        vehicle_model: vehicleModel,
-        plate_number: plateNumber,
-        vehicle_type: vehicleType,
-        vehicle_brand: vehicleBrand,
-        is_online: isOnline,
+        vehicleModel: vehicleModel,
+        plateNumber: plateNumber,
+        vehicleType: vehicleType,
+        vehicleBrand: vehicleBrand,
+        isOnline: isOnline,
       });
 
       setMessage("Profile updated successfully");

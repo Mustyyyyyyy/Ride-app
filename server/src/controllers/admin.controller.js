@@ -162,10 +162,11 @@ exports.getDrivers = async (req, res) => {
         u.name,
         u.email,
         u.phone,
-        dp.vehicle_model,
-        dp.plate_number,
-        dp.vehicle_color,
-        dp.is_online
+        dp.vehicleModel,
+        dp.plateNumber,
+        dp.vehicleType,
+        dp.vehicleBrand,
+        dp.isOnline
       FROM users u
       LEFT JOIN driver_profiles dp ON u.id = dp.user_id
       WHERE u.role = 'driver'

@@ -11,10 +11,11 @@ type DriverItem = {
   name: string;
   email: string;
   phone?: string;
-  vehicle_model?: string;
-  plate_number?: string;
-  vehicle_type?: string;
-  is_online?: boolean;
+  vehicleModel?: string;
+  plateNumber?: string;
+  vehicleType?: string;
+  vehicleBrand?: string;
+  isOnline?: boolean;
 };
 
 export default function AdminDriversPage() {
@@ -97,12 +98,12 @@ export default function AdminDriversPage() {
                   <div className="flex flex-col items-start gap-3 md:items-end">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                        driver.is_online
+                        driver.isOnline
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {driver.is_online ? "Online" : "Offline"}
+                      {driver.isOnline ? "Online" : "Offline"}
                     </span>
 
                     <button
@@ -119,21 +120,21 @@ export default function AdminDriversPage() {
                   <div className="rounded-xl bg-white p-3">
                     <p className="text-xs text-gray-500">Vehicle</p>
                     <p className="font-semibold text-gray-900">
-                      {driver.vehicle_model || "-"}
+                      {driver.vehicleModel || "-"}
                     </p>
                   </div>
 
                   <div className="rounded-xl bg-white p-3">
                     <p className="text-xs text-gray-500">Plate</p>
                     <p className="font-semibold text-gray-900">
-                      {driver.plate_number || "-"}
+                      {driver.plateNumber || "-"}
                     </p>
                   </div>
 
                   <div className="rounded-xl bg-white p-3">
                     <p className="text-xs text-gray-500">Type</p>
                     <p className="font-semibold text-gray-900">
-                      {driver.vehicle_type || "-"}
+                      {driver.vehicleType || "-"}
                     </p>
                   </div>
                 </div>

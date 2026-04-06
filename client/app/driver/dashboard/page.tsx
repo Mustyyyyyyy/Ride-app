@@ -91,7 +91,7 @@ export default function DriverDashboardPage() {
       null;
 
     const rideId = activeRide?.id;
-    const isOnline = !!data?.profile?.is_online;
+    const isOnline = !!data?.profile?.isOnline;
 
     if (!rideId || !user?.id || !isOnline) {
       if (watchIdRef.current !== null) {
@@ -140,7 +140,7 @@ export default function DriverDashboardPage() {
     data?.activeRide?.id,
     data?.currentRide?.id,
     data?.ongoingRide?.id,
-    data?.profile?.is_online,
+    data?.profile?.isOnline,
     user?.id,
   ]);
 
@@ -417,10 +417,10 @@ export default function DriverDashboardPage() {
                 Driver Status
               </p>
               <p className="mt-3 text-lg font-bold text-slate-900">
-                {data?.profile?.is_online ? "Online" : "Offline"}
+                {data?.profile?.isOnline ? "Online" : "Offline"}
               </p>
               <p className="mt-1 text-sm text-slate-500">
-                {data?.profile?.is_online
+                {data?.profile?.isOnline
                   ? "You are available to receive rides."
                   : "Go online to start receiving rides."}
               </p>
@@ -445,7 +445,7 @@ export default function DriverDashboardPage() {
                   Vehicle
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
-                  {data?.profile?.vehicle_model || "-"}
+                  {data?.profile?.vehicleModel || "-"}
                 </p>
               </div>
 
@@ -454,7 +454,7 @@ export default function DriverDashboardPage() {
                   Plate Number
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
-                  {data?.profile?.plate_number || "-"}
+                  {data?.profile?.plateNumber || "-"}
                 </p>
               </div>
 
@@ -463,7 +463,7 @@ export default function DriverDashboardPage() {
                   Vehicle Type
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
-                  {data?.profile?.vehicle_type || "-"}
+                  {data?.profile?.vehicleType || "-"}
                 </p>
               </div>
 

@@ -290,12 +290,12 @@ export const driverApi = {
 
   updateProfile: (
   payload: {
-    vehicle_model: string;
-    plate_number: string;
-    vehicle_image?: string;
-    vehicle_type?: string;
-    vehicle_brand?: string;
-    is_online: boolean;
+    vehicleModel: string;
+    plateNumber: string;
+    vehicleImage?: string;
+    vehicleType?: string;
+    vehicleBrand?: string;
+    isOnline: boolean;
   },
   token?: string | null
 ) =>
