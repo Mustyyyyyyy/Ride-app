@@ -15,36 +15,47 @@ exports.getDashboard = async (req, res) => {
       recentRidesResult,
     ] = await Promise.all([
       pool.query(`
-        SELECT COUNT(*)::int AS total_users
+        SELECT COUNT(*)::integer AS total_users
         FROM users
       `),
 
       pool.query(`
-        SELECT COUNT(*)::int AS total_drivers
+        SELECT COUNT(*)::integer AS total_drivers
         FROM users
         WHERE role = 'driver'
       `),
 
       pool.query(`
-        SELECT COUNT(*)::int AS total_rides
+        SELECT COUNT(*)::integer AS total_rides
         FROM rides
       `),
 
       pool.query(`
-        SELECT COUNT(*)::int AS open_tickets
+        SELECT COUNT(*)::integer AS open_tickets
         FROM support_tickets
         WHERE status = 'open'
       `),
 
-      pool.query(`
-        SELECT COALESCE(SUM(price), 0)::int AS revenue_today
+pool.query(`
+        SELECT COALESCE(SUM(fare), 0)::integer AS revenue_today
         FROM rides
         WHERE DATE(created_at) = CURRENT_DATE
           AND status = 'completed'
       `),
 
       pool.query(`
-        SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0)::int AS avg_wait_time
+        SELECT
+          TO_CHAR(created_at, 'Dy') AS day,
+          COALESCE(SUM(fare), 0)::integer AS revenue
+        FROM rides
+        WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
+          AND status = 'completed'
+        GROUP BY DATE(created_at), TO_CHAR(created_at, 'Dy')
+        ORDER BY DATE(created_at) ASC
+      `),
+
+      pool.query(`
+        SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0)::integer AS avg_wait_time
         FROM rides
         WHERE status IN ('accepted', 'ongoing', 'completed')
       `),
@@ -52,7 +63,7 @@ exports.getDashboard = async (req, res) => {
       pool.query(`
         SELECT
           TO_CHAR(created_at, 'Dy') AS day,
-          COALESCE(SUM(price), 0)::int AS revenue
+          COALESCE(SUM(fare), 0)::integer AS revenue
         FROM rides
         WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
           AND status = 'completed'
@@ -63,7 +74,7 @@ exports.getDashboard = async (req, res) => {
       pool.query(`
         SELECT
           ride_type,
-          COUNT(*)::int AS total
+          COUNT(*)::integer AS total
         FROM rides
         GROUP BY ride_type
         ORDER BY total DESC
@@ -82,7 +93,7 @@ exports.getDashboard = async (req, res) => {
           r.pickup,
           r.dropoff,
           r.status,
-          r.price,
+          r.fare,
           r.ride_type,
           r.created_at
         FROM rides r
@@ -324,7 +335,7 @@ exports.getAdvancedAnalytics = async (req, res) => {
     const revenueTrend = await pool.query(`
       SELECT
         DATE(created_at) as date,
-        SUM(price) as revenue
+        SUM(fare) as revenue
       FROM rides
       WHERE status = 'completed'
       GROUP BY DATE(created_at)
@@ -342,8 +353,8 @@ exports.getAdvancedAnalytics = async (req, res) => {
 
     const paymentStats = await pool.query(`
       SELECT
-        SUM(price) FILTER (WHERE payment_method = 'wallet' AND status='completed') AS wallet,
-        SUM(price) FILTER (WHERE payment_method = 'cash' AND status='completed') AS cash
+        SUM(fare) FILTER (WHERE payment_method = 'wallet' AND status='completed') AS wallet,
+        SUM(fare) FILTER (WHERE payment_method = 'cash' AND status='completed') AS cash
       FROM rides
     `);
 

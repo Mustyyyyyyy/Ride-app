@@ -113,7 +113,7 @@ exports.requestRide = async (req, res) => {
         payment_method,
         note,
         status,
-        price,
+        fare,
         pickup_lat,
         pickup_lng,
         dropoff_lat,

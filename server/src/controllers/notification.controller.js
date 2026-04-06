@@ -22,7 +22,7 @@ exports.getMyNotifications = async (req, res) => {
 exports.getUnreadNotificationCount = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT COUNT(*)::int AS count
+      `SELECT COUNT(*)::integer AS count
        FROM notifications
        WHERE user_id = $1 AND is_read = FALSE`,
       [req.user.id]

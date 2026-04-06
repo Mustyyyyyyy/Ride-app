@@ -17,12 +17,12 @@ exports.getDashboard = async (req, res) => {
     const statsResult = await pool.query(
       `
       SELECT
-        COUNT(*)::int AS total_rides,
-        COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_rides,
+        COUNT(*)::integer AS total_rides,
+        COUNT(*) FILTER (WHERE status = 'completed')::integer AS completed_rides,
         COUNT(*) FILTER (
           WHERE status IN ('pending', 'accepted', 'ongoing')
-        )::int AS pending_rides,
-        COALESCE(SUM(price), 0)::numeric AS total_spent
+        )::integer AS pending_rides,
+        COALESCE(SUM(fare), 0)::numeric AS total_spent
       FROM rides
       WHERE passenger_id = $1
       `,
@@ -31,7 +31,7 @@ exports.getDashboard = async (req, res) => {
 
     const recentRidesResult = await pool.query(
       `
-      SELECT id, pickup, dropoff, status, price, created_at
+      SELECT id, pickup, dropoff, status, fare, created_at
       FROM rides
       WHERE passenger_id = $1
       ORDER BY created_at DESC
