@@ -60,7 +60,7 @@ exports.getDashboard = async (req, res) => {
       ),
       pool.query(
         `
-        SELECT COALESCE(SUM(fare), 0)::integer AS today_earnings
+        SELECT COALESCE(SUM(fare), 0) AS today_earnings
         FROM rides
         WHERE driver_id = $1
         AND status = 'completed'
@@ -839,7 +839,7 @@ exports.getDriverAnalytics = async (req, res) => {
       `
       SELECT
         TO_CHAR(created_at, 'Dy') AS day,
-        COALESCE(SUM(fare), 0)::integer AS earnings
+        COALESCE(SUM(fare), 0) AS earnings
       FROM rides
       WHERE driver_id = $1
       AND status = 'completed'

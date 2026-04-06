@@ -44,11 +44,11 @@ CREATE TABLE IF NOT EXISTS wallets (
 
 CREATE TABLE IF NOT EXISTS transactions (
   id SERIAL PRIMARY KEY,
-  wallet_id INT NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+  wallet_id INT REFERENCES wallets(id) ON DELETE CASCADE,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type VARCHAR(20) NOT NULL,
   amount NUMERIC(12,2) NOT NULL,
-  description TEXT NOT NULL,
+  description TEXT DEFAULT '',
   status VARCHAR(20) DEFAULT 'success',
   reference VARCHAR(120),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

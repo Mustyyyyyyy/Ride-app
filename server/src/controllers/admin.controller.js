@@ -2,7 +2,7 @@ const pool = require("../config/db");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const [
+const [
       usersResult,
       driversResult,
       ridesResult,
@@ -15,29 +15,29 @@ exports.getDashboard = async (req, res) => {
       recentRidesResult,
     ] = await Promise.all([
       pool.query(`
-        SELECT COUNT(*)::integer AS total_users
+        SELECT COUNT(*) AS total_users
         FROM users
       `),
 
       pool.query(`
-        SELECT COUNT(*)::integer AS total_drivers
+        SELECT COUNT(*) AS total_drivers
         FROM users
         WHERE role = 'driver'
       `),
 
       pool.query(`
-        SELECT COUNT(*)::integer AS total_rides
+        SELECT COUNT(*) AS total_rides
         FROM rides
       `),
 
       pool.query(`
-        SELECT COUNT(*)::integer AS open_tickets
+        SELECT COUNT(*) AS open_tickets
         FROM support_tickets
         WHERE status = 'open'
       `),
 
-pool.query(`
-        SELECT COALESCE(SUM(fare), 0)::integer AS revenue_today
+      pool.query(`
+        SELECT COALESCE(SUM(fare), 0) AS revenue_today
         FROM rides
         WHERE DATE(created_at) = CURRENT_DATE
           AND status = 'completed'
@@ -46,7 +46,7 @@ pool.query(`
       pool.query(`
         SELECT
           TO_CHAR(created_at, 'Dy') AS day,
-          COALESCE(SUM(fare), 0)::integer AS revenue
+          COALESCE(SUM(fare), 0) AS revenue
         FROM rides
         WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
           AND status = 'completed'
@@ -55,7 +55,7 @@ pool.query(`
       `),
 
       pool.query(`
-        SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0)::integer AS avg_wait_time
+        SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60), 0) AS avg_wait_time
         FROM rides
         WHERE status IN ('accepted', 'ongoing', 'completed')
       `),
@@ -63,7 +63,7 @@ pool.query(`
       pool.query(`
         SELECT
           TO_CHAR(created_at, 'Dy') AS day,
-          COALESCE(SUM(fare), 0)::integer AS revenue
+          COALESCE(SUM(fare), 0) AS revenue
         FROM rides
         WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
           AND status = 'completed'
@@ -74,7 +74,7 @@ pool.query(`
       pool.query(`
         SELECT
           ride_type,
-          COUNT(*)::integer AS total
+          COUNT(*) AS total
         FROM rides
         GROUP BY ride_type
         ORDER BY total DESC
