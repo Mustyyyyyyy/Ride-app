@@ -5,7 +5,7 @@ const cloudinary = require("../config/cloudinary");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const [
       ridesResult,
@@ -121,7 +121,7 @@ exports.getDashboard = async (req, res) => {
 
 exports.getAvailableRides = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const profileCheck = await pool.query(
       `
@@ -166,7 +166,7 @@ exports.getAvailableRides = async (req, res) => {
 
 exports.acceptRide = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const { id } = req.params;
 
     const profileCheck = await pool.query(
@@ -268,7 +268,7 @@ exports.acceptRide = async (req, res) => {
 
 exports.getMyTrips = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const result = await pool.query(
       `
@@ -295,7 +295,7 @@ exports.getMyTrips = async (req, res) => {
 
 exports.getTripById = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const { id } = req.params;
 
     if (!id || Number.isNaN(Number(id))) {
@@ -338,7 +338,7 @@ exports.getTripById = async (req, res) => {
 
 exports.updateRideStatus = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const { id } = req.params;
     const { status } = req.body;
 
@@ -590,7 +590,7 @@ exports.updateRideStatus = async (req, res) => {
 
 exports.getWallet = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const walletResult = await pool.query(
       `
@@ -627,7 +627,7 @@ exports.getWallet = async (req, res) => {
 
 exports.withdrawWallet = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const amount = Number(req.body.amount);
 
     if (!amount || amount <= 0) {
@@ -707,7 +707,7 @@ exports.withdrawWallet = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const result = await pool.query(
       `
@@ -733,7 +733,7 @@ exports.getNotifications = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
   const result = await pool.query(
   `
@@ -774,7 +774,7 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const {
       vehicle_model,
       plate_number,
@@ -833,7 +833,7 @@ exports.updateProfile = async (req, res) => {
 
 exports.getDriverAnalytics = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     const result = await pool.query(
       `
@@ -877,7 +877,7 @@ exports.getDriverAnalytics = async (req, res) => {
 
 exports.uploadVehicleImage = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
 
     if (!req.file) {
       return res.status(400).json({

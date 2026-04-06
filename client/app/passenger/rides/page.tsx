@@ -12,7 +12,7 @@ type Ride = {
   id: number | string;
   pickup: string;
   dropoff: string;
-  price?: number | string;
+  fare?: number | string;
   status: string;
   created_at?: string;
   driver_name?: string;
@@ -110,7 +110,7 @@ export default function PassengerRidesPage() {
 
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        ₦{Number(ride.price || 0).toLocaleString()}
+                        ₦{Number(ride.fare || 0).toLocaleString()}
                       </p>
 
                       <span

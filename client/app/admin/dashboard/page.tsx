@@ -38,7 +38,7 @@ type DashboardData = {
     pickup: string;
     dropoff: string;
     status: string;
-    price: number;
+    fare: number;
     ride_type?: string;
     created_at?: string;
   }>;
@@ -448,7 +448,7 @@ export default function AdminDashboardPage() {
                       </p>
 
                       <p className="font-semibold text-slate-700">
-                        ₦{Number(ride.price || 0).toLocaleString()}
+                        ₦{Number(ride.fare || 0).toLocaleString()}
                       </p>
 
                       <span
