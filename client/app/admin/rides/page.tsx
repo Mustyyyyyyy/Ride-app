@@ -11,7 +11,7 @@ type RideItem = {
   pickup: string;
   dropoff: string;
   status: string;
-  price: number;
+  fare: number;
   passenger_name?: string;
   driver_name?: string;
   created_at?: string;
@@ -77,7 +77,7 @@ export default function AdminRidesPage() {
 
                   <div className="text-right">
                     <p className="font-bold text-gray-900">
-                      ₦{Number(ride.price || 0).toLocaleString()}
+                      ₦{Number(ride.fare || 0).toLocaleString()}
                     </p>
                     <p className="mt-1 text-xs uppercase tracking-wide text-green-700">
                       {ride.status}

@@ -57,7 +57,7 @@ export default function DriverRidesPage() {
 
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      ₦{Number(ride.price || 0).toLocaleString()}
+                      ₦{Number(ride.fare || 0).toLocaleString()}
                     </p>
                     <p className="mt-1 text-sm text-green-700">{ride.status}</p>
                   </div>

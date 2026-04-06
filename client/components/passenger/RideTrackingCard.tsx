@@ -128,7 +128,7 @@ export default function RideTrackingCard({ ride }: Props) {
 
             <p className="text-sm text-gray-600">
               {ride?.vehicle_model || "Vehicle not assigned"}{" "}
-              {ride?.vehicle_color ? `• ${ride.vehicle_color}` : ""}
+              {ride?.vehicle_type ? `• ${ride.vehicle_type}` : ""}
             </p>
 
             <p className="text-xs text-gray-500">

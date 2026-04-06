@@ -192,7 +192,7 @@ exports.getRides = async (req, res) => {
         r.pickup,
         r.dropoff,
         r.status,
-        r.price,
+        r.fare,
         r.ride_type,
         r.created_at,
         p.name AS passenger_name,

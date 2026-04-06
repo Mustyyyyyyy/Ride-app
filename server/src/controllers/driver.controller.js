@@ -27,7 +27,7 @@ exports.getDashboard = async (req, res) => {
       pool.query(
         `
         SELECT balance
-        FROM driver_wallets
+        FROM wallets
         WHERE user_id = $1
         LIMIT 1
         `,
@@ -38,10 +38,10 @@ exports.getDashboard = async (req, res) => {
         SELECT
           vehicle_model,
           plate_number,
-          vehicle_color,
           vehicle_image,
-          ride_categories,
-          is_online
+          is_online,
+          vehicle_type,
+          vehicle_brand
         FROM driver_profiles
         WHERE user_id = $1
         LIMIT 1
@@ -60,7 +60,7 @@ exports.getDashboard = async (req, res) => {
       ),
       pool.query(
         `
-        SELECT COALESCE(SUM(price), 0)::int AS today_earnings
+        SELECT COALESCE(SUM(fare), 0)::int AS today_earnings
         FROM rides
         WHERE driver_id = $1
         AND status = 'completed'
@@ -79,7 +79,7 @@ exports.getDashboard = async (req, res) => {
 
     const totalEarnings = rides
       .filter((r) => r.status === "completed")
-      .reduce((sum, ride) => sum + Number(ride.price || 0), 0);
+      .reduce((sum, ride) => sum + Number(ride.fare || 0), 0);
 
     const activeRide =
       rides.find((r) => r.status === "ongoing") ||
@@ -101,10 +101,10 @@ exports.getDashboard = async (req, res) => {
         profileResult.rows[0] || {
           vehicle_model: "",
           plate_number: "",
-          vehicle_color: "",
           vehicle_image: "",
-          ride_categories: ["standard"],
           is_online: false,
+          vehicle_type: "",
+          vehicle_brand: "",
         },
       notifications: notificationsResult.rows || [],
       recentRides: rides.slice(0, 7),
@@ -125,7 +125,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online, ride_categories
+      SELECT is_online
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -139,8 +139,6 @@ exports.getAvailableRides = async (req, res) => {
       });
     }
 
-    const categories = profileCheck.rows[0].ride_categories || ["standard"];
-
     const result = await pool.query(
       `
       SELECT
@@ -150,10 +148,8 @@ exports.getAvailableRides = async (req, res) => {
       INNER JOIN users u ON r.passenger_id = u.id
       WHERE r.driver_id IS NULL
       AND r.status = 'pending'
-      AND r.ride_type = ANY($1::text[])
       ORDER BY r.created_at DESC
-      `,
-      [categories]
+      `
     );
 
     return res.status(200).json({
@@ -175,7 +171,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT is_online, ride_categories
+      SELECT is_online
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -202,15 +198,6 @@ exports.acceptRide = async (req, res) => {
     if (rideCheck.rows.length === 0) {
       return res.status(404).json({
         message: "Ride not found",
-      });
-    }
-
-    const rideToAccept = rideCheck.rows[0];
-    const categories = profileCheck.rows[0].ride_categories || ["standard"];
-
-    if (!categories.includes(rideToAccept.ride_type)) {
-      return res.status(400).json({
-        message: "Your vehicle category does not match this ride type",
       });
     }
 
@@ -410,7 +397,7 @@ exports.updateRideStatus = async (req, res) => {
         passengerWalletCheck.rows[0]?.balance || 0
       );
 
-      if (passengerBalance < ride.price) {
+      if (passengerBalance < ride.fare) {
         return res.status(400).json({
           message: "Passenger has insufficient wallet balance",
         });
@@ -458,13 +445,13 @@ exports.updateRideStatus = async (req, res) => {
     }
 
     if (status === "completed") {
-      const fare = Number(updatedRide.price || 0);
+      const fare = Number(updatedRide.fare || 0);
 
       if (paymentMethod === "wallet") {
 
         await pool.query(
           `
-          UPDATE driver_wallets
+          UPDATE wallets
           SET balance = balance + $1
           WHERE user_id = $2
           `,
@@ -608,7 +595,7 @@ exports.getWallet = async (req, res) => {
     const walletResult = await pool.query(
       `
       SELECT balance
-      FROM driver_wallets
+      FROM wallets
       WHERE user_id = $1
       LIMIT 1
       `,
@@ -652,7 +639,7 @@ exports.withdrawWallet = async (req, res) => {
     const walletResult = await pool.query(
       `
       SELECT balance
-      FROM driver_wallets
+      FROM wallets
       WHERE user_id = $1
       LIMIT 1
       `,
@@ -669,7 +656,7 @@ exports.withdrawWallet = async (req, res) => {
 
     const updated = await pool.query(
       `
-      UPDATE driver_wallets
+      UPDATE wallets
       SET balance = balance - $1
       WHERE user_id = $2
       RETURNING balance
@@ -757,9 +744,9 @@ exports.getProfile = async (req, res) => {
     u.phone,
     dp.vehicle_model,
     dp.plate_number,
-    dp.vehicle_color,
     dp.vehicle_image,
-    dp.ride_categories,
+    dp.vehicle_type,
+    dp.vehicle_brand,
     dp.is_online
   FROM users u
   LEFT JOIN driver_profiles dp ON u.id = dp.user_id
@@ -791,17 +778,11 @@ exports.updateProfile = async (req, res) => {
     const {
       vehicle_model,
       plate_number,
-      vehicle_color,
       vehicle_image,
-      ride_categories,
+      vehicle_type,
+      vehicle_brand,
       is_online,
     } = req.body;
-
-    const allowedCategories = ["standard", "comfort", "premium"];
-
-    const safeCategories = Array.isArray(ride_categories)
-      ? ride_categories.filter((item) => allowedCategories.includes(item))
-      : ["standard"];
 
     const result = await pool.query(
       `
@@ -809,9 +790,9 @@ exports.updateProfile = async (req, res) => {
         user_id,
         vehicle_model,
         plate_number,
-        vehicle_color,
         vehicle_image,
-        ride_categories,
+        vehicle_type,
+        vehicle_brand,
         is_online
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -819,9 +800,9 @@ exports.updateProfile = async (req, res) => {
       DO UPDATE SET
         vehicle_model = EXCLUDED.vehicle_model,
         plate_number = EXCLUDED.plate_number,
-        vehicle_color = EXCLUDED.vehicle_color,
         vehicle_image = EXCLUDED.vehicle_image,
-        ride_categories = EXCLUDED.ride_categories,
+        vehicle_type = EXCLUDED.vehicle_type,
+        vehicle_brand = EXCLUDED.vehicle_brand,
         is_online = EXCLUDED.is_online,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
@@ -830,9 +811,9 @@ exports.updateProfile = async (req, res) => {
         userId,
         vehicle_model || "",
         plate_number || "",
-        vehicle_color || "",
         vehicle_image || "",
-        safeCategories,
+        vehicle_type || "",
+        vehicle_brand || "",
         !!is_online,
       ]
     );
@@ -858,7 +839,7 @@ exports.getDriverAnalytics = async (req, res) => {
       `
       SELECT
         TO_CHAR(created_at, 'Dy') AS day,
-        COALESCE(SUM(price), 0)::int AS earnings
+        COALESCE(SUM(fare), 0)::int AS earnings
       FROM rides
       WHERE driver_id = $1
       AND status = 'completed'

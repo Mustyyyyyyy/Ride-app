@@ -13,9 +13,9 @@ export default function DriverProfilePage() {
 
   const [vehicleModel, setVehicleModel] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
-  const [vehicleColor, setVehicleColor] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [vehicleBrand, setVehicleBrand] = useState("");
   const [vehicleImage, setVehicleImage] = useState("");
-  const [rideCategories, setRideCategories] = useState<string[]>(["standard"]);
   const [isOnline, setIsOnline] = useState(false);
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -30,9 +30,9 @@ export default function DriverProfilePage() {
 
         setVehicleModel(profile?.vehicle_model || "");
         setPlateNumber(profile?.plate_number || "");
-        setVehicleColor(profile?.vehicle_color || "");
+        setVehicleType(profile?.vehicle_type || "");
+        setVehicleBrand(profile?.vehicle_brand || "");
         setVehicleImage(profile?.vehicle_image || "");
-        setRideCategories(profile?.ride_categories || ["standard"]);
         setIsOnline(!!profile?.is_online);
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
@@ -47,18 +47,7 @@ export default function DriverProfilePage() {
 
     const socket = getSocket();
     socket.emit("joinDriver", { driverId: user.id });
-    socket.emit("updateDriverCategories", {
-      categories: rideCategories,
-    });
-  }, [user?.id, rideCategories]);
-
-  const toggleCategory = (category: string) => {
-    setRideCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
-  };
+  }, [user?.id]);
 
   const handleImageChange = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -90,18 +79,13 @@ export default function DriverProfilePage() {
         {
           vehicle_model: vehicleModel,
           plate_number: plateNumber,
-          vehicle_color: vehicleColor,
+          vehicle_type: vehicleType,
+          vehicle_brand: vehicleBrand,
           vehicle_image: vehicleImage,
-          ride_categories: rideCategories,
           is_online: isOnline,
         },
         token
       );
-
-      const socket = getSocket();
-      socket.emit("updateDriverCategories", {
-        categories: rideCategories,
-      });
 
       setMessage("Profile updated successfully");
     } catch (err: any) {
@@ -162,32 +146,18 @@ export default function DriverProfilePage() {
             />
 
             <input
-              value={vehicleColor}
-              onChange={(e) => setVehicleColor(e.target.value)}
-              placeholder="Vehicle Color"
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              placeholder="Vehicle Type"
               className="w-full rounded-2xl border border-green-100 px-4 py-3"
             />
 
-            <div className="space-y-2">
-              <p className="font-bold text-gray-900">Ride Categories</p>
-
-              <div className="flex flex-wrap gap-3">
-                {["standard", "comfort", "premium"].map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => toggleCategory(cat)}
-                    className={`rounded-xl px-4 py-2 font-semibold ${
-                      rideCategories.includes(cat)
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <input
+              value={vehicleBrand}
+              onChange={(e) => setVehicleBrand(e.target.value)}
+              placeholder="Vehicle Brand"
+              className="w-full rounded-2xl border border-green-100 px-4 py-3"
+            />
 
             <div className="flex items-center justify-between rounded-2xl border border-green-100 bg-green-50 p-4">
               <div>

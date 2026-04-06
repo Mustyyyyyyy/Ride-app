@@ -152,7 +152,7 @@ export default function DriverDashboardPage() {
 
   const totalRecentEarnings = useMemo(() => {
     return completedRecentRides.reduce(
-      (sum: number, ride: any) => sum + Number(ride.price || 0),
+      (sum: number, ride: any) => sum + Number(ride.fare || 0),
       0
     );
   }, [completedRecentRides]);
@@ -161,7 +161,7 @@ export default function DriverDashboardPage() {
     const values = completedRecentRides
       .slice(0, 7)
       .reverse()
-      .map((ride: any) => Number(ride.price || 0));
+      .map((ride: any) => Number(ride.fare || 0));
 
     const fallback = [12, 28, 18, 36, 30, 44, 39];
     const points = values.length ? values : fallback;
@@ -460,10 +460,10 @@ export default function DriverDashboardPage() {
 
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Vehicle Color
+                  Vehicle Type
                 </p>
                 <p className="mt-2 font-semibold text-slate-900">
-                  {data?.profile?.vehicle_color || "-"}
+                  {data?.profile?.vehicle_type || "-"}
                 </p>
               </div>
 

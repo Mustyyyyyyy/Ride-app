@@ -6,13 +6,15 @@ type DriverProfileFormProps = {
   initialData?: {
     vehicle_model?: string;
     plate_number?: string;
-    vehicle_color?: string;
+    vehicle_type?: string;
+    vehicle_brand?: string;
     is_online?: boolean;
   };
   onSave: (payload: {
     vehicle_model: string;
     plate_number: string;
-    vehicle_color: string;
+    vehicle_type: string;
+    vehicle_brand: string;
     is_online: boolean;
   }) => Promise<void>;
 };
@@ -27,8 +29,11 @@ export default function DriverProfileForm({
   const [plateNumber, setPlateNumber] = useState(
     initialData?.plate_number || ""
   );
-  const [vehicleColor, setVehicleColor] = useState(
-    initialData?.vehicle_color || ""
+  const [vehicleType, setVehicleType] = useState(
+    initialData?.vehicle_type || ""
+  );
+  const [vehicleBrand, setVehicleBrand] = useState(
+    initialData?.vehicle_brand || ""
   );
   const [isOnline, setIsOnline] = useState(!!initialData?.is_online);
   const [message, setMessage] = useState("");
@@ -45,7 +50,8 @@ export default function DriverProfileForm({
       await onSave({
         vehicle_model: vehicleModel,
         plate_number: plateNumber,
-        vehicle_color: vehicleColor,
+        vehicle_type: vehicleType,
+        vehicle_brand: vehicleBrand,
         is_online: isOnline,
       });
 
@@ -74,9 +80,16 @@ export default function DriverProfileForm({
       />
 
       <input
-        value={vehicleColor}
-        onChange={(e) => setVehicleColor(e.target.value)}
-        placeholder="Vehicle color"
+        value={vehicleType}
+        onChange={(e) => setVehicleType(e.target.value)}
+        placeholder="Vehicle type"
+        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white"
+      />
+
+      <input
+        value={vehicleBrand}
+        onChange={(e) => setVehicleBrand(e.target.value)}
+        placeholder="Vehicle brand"
         className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white"
       />
 

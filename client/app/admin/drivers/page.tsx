@@ -13,7 +13,7 @@ type DriverItem = {
   phone?: string;
   vehicle_model?: string;
   plate_number?: string;
-  vehicle_color?: string;
+  vehicle_type?: string;
   is_online?: boolean;
 };
 
@@ -131,9 +131,9 @@ export default function AdminDriversPage() {
                   </div>
 
                   <div className="rounded-xl bg-white p-3">
-                    <p className="text-xs text-gray-500">Color</p>
+                    <p className="text-xs text-gray-500">Type</p>
                     <p className="font-semibold text-gray-900">
-                      {driver.vehicle_color || "-"}
+                      {driver.vehicle_type || "-"}
                     </p>
                   </div>
                 </div>

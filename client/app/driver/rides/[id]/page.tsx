@@ -108,7 +108,7 @@ export default function DriverTripDetailsPage() {
             <div className="rounded-2xl border border-green-100 bg-white p-4">
               <p className="text-xs uppercase tracking-wide text-gray-500">Fare</p>
               <p className="mt-2 font-semibold text-gray-900">
-                ₦{Number(ride.price || 0).toLocaleString()}
+                ₦{Number(ride.fare || 0).toLocaleString()}
               </p>
             </div>
 

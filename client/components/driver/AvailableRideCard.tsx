@@ -25,7 +25,7 @@ export default function AvailableRideCard({
             Passenger: {ride.passenger_name || "Unknown"}
           </p>
           <p className="mt-1 text-sm font-semibold text-green-700">
-            ₦{Number(ride.price || 0).toLocaleString()}
+            ₦{Number(ride.fare || 0).toLocaleString()}
           </p>
         </div>
 

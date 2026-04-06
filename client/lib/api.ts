@@ -292,9 +292,9 @@ export const driverApi = {
   payload: {
     vehicle_model: string;
     plate_number: string;
-    vehicle_color: string;
     vehicle_image?: string;
-    ride_categories?: string[];
+    vehicle_type?: string;
+    vehicle_brand?: string;
     is_online: boolean;
   },
   token?: string | null
