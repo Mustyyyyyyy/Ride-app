@@ -149,7 +149,7 @@ exports.sendSOS = async (req, res) => {
 
 exports.getSupportTickets = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const result = await pool.query(
       `
@@ -175,7 +175,7 @@ exports.getSupportTickets = async (req, res) => {
 
 exports.createSupportTicket = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
     const { subject, category, message } = req.body;
 
     if (!subject || !message) {

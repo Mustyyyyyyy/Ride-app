@@ -223,7 +223,7 @@ exports.getRideById = async (req, res) => {
 
 exports.cancelRide = async (req, res) => {
   try {
-    const passengerId = Number(req.user.id);
+    const passengerId = req.user.id;
     const { id } = req.params;
 
     const existingRide = await pool.query(
@@ -285,7 +285,7 @@ exports.cancelRide = async (req, res) => {
 
 exports.getAvailableRides = async (req, res) => {
   try {
-    const driverId = Number(req.user.id);
+    const driverId = req.user.id;
 
     const profileResult = await pool.query(
       `

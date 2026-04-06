@@ -6,7 +6,7 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 exports.getOrCreateVirtualAccount = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const existingAccount = await pool.query(
       `

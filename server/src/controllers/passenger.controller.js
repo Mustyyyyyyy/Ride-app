@@ -2,7 +2,7 @@ const pool = require("../config/db");
 
 exports.getDashboard = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const walletResult = await pool.query(
       `
@@ -87,7 +87,7 @@ exports.getDashboard = async (req, res) => {
 
 exports.getWallet = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const result = await pool.query(
       `
@@ -115,7 +115,7 @@ exports.getWallet = async (req, res) => {
 
 exports.getTransactions = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const result = await pool.query(
       `
@@ -141,7 +141,7 @@ exports.getTransactions = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
 
     const result = await pool.query(
       `
@@ -193,7 +193,7 @@ exports.getSupportTickets = async (req, res) => {
 
 exports.createSupportTicket = async (req, res) => {
   try {
-    const userId = Number(req.user.id);
+    const userId = req.user.id;
     const { subject, category, message } = req.body;
 
     if (!subject || !message) {

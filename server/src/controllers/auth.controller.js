@@ -157,7 +157,7 @@ exports.getMe = async (req, res) => {
       WHERE id = $1
       LIMIT 1
       `,
-      [Number(req.user.id)]
+      [req.user.id]
     );
 
     if (result.rows.length === 0) {
