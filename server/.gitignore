@@ -4,3 +4,6 @@ node_modules
 .env.example
 
 /generated/prisma
+
+
+.SQL_MIGRATION_COMMANDS.md
