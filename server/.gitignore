@@ -6,4 +6,4 @@ node_modules
 /generated/prisma
 
 
-.SQL_MIGRATION_COMMANDS.md
+SQL_MIGRATION_COMMANDS.md
