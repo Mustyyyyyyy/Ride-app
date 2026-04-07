@@ -15,21 +15,7 @@ const registerRideSocket = (io) => {
       socket.join(`driver:${driverId}`);
 
       try {
-        const profileResult = await pool.query(
-          `
-          SELECT ride_categories
-          FROM driver_profiles
-          WHERE user_id = $1
-          LIMIT 1
-          `,
-          [Number(driverId)]
-        );
-
-        const categories = profileResult.rows[0]?.ride_categories || ["standard"];
-
-        categories.forEach((category) => {
-          socket.join(`drivers:${category}`);
-        });
+        socket.join(`drivers:standard`);
       } catch (error) {
         console.error("JOIN DRIVER CATEGORY ERROR:", error);
       }

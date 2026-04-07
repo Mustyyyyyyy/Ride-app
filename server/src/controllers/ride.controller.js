@@ -197,11 +197,11 @@ exports.getRideById = async (req, res) => {
         r.*,
         u.name AS driver_name,
         u.phone AS driver_phone,
-        dp.vehicleModel,
-        dp.vehicleType,
-        dp.vehicleBrand,
-        dp.plateNumber,
-        dp.vehicleImage
+        dp.vehicle_model AS vehicleModel,
+        dp.vehicle_type AS vehicleType,
+        dp.vehicle_brand AS vehicleBrand,
+        dp.plate_number AS plateNumber,
+        dp.vehicle_image AS vehicleImage
       FROM rides r
       LEFT JOIN users u ON r.driver_id = u.id
       LEFT JOIN driver_profiles dp ON dp.user_id = u.id
@@ -290,7 +290,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileResult = await pool.query(
       `
-      SELECT isOnline
+      SELECT is_online AS isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -305,7 +305,7 @@ exports.getAvailableRides = async (req, res) => {
       return res.json({ rides: [] });
     }
 
-    const categories = profileResult.rows[0].ride_categories || ["standard"];
+    const categories = ["standard"];
 
     const result = await pool.query(
       `
@@ -336,7 +336,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileResult = await pool.query(
       `
-      SELECT isOnline
+      SELECT is_online AS isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -368,7 +368,7 @@ exports.acceptRide = async (req, res) => {
     }
 
     const rideToAccept = rideCheck.rows[0];
-    const categories = profileResult.rows[0].ride_categories || ["standard"];
+    const categories = ["standard"];
 
     if (!categories.includes(rideToAccept.ride_type)) {
       return res.status(400).json({

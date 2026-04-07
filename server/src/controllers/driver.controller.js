@@ -125,7 +125,7 @@ exports.getAvailableRides = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT isOnline
+      SELECT is_online AS isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
@@ -171,7 +171,7 @@ exports.acceptRide = async (req, res) => {
 
     const profileCheck = await pool.query(
       `
-      SELECT isOnline
+      SELECT is_online AS isOnline
       FROM driver_profiles
       WHERE user_id = $1
       LIMIT 1
